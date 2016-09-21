@@ -1,0 +1,444 @@
+//
+//  KPNetworkingTool.h
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/4/29.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import <AFNetworking/AFNetworking.h>
+
+// param model
+@class KPLoginRegistParam;
+@class KPUploadParam;
+@class KPGoodsDetailParam;
+@class KPShopDetailParam;
+@class KPShopNewGoosParam;
+@class KPUpdateSubsidizeParam;
+@class KPDeleteSubsidizeParam;
+@class KPChangePwdParam;
+@class KPChangePayPwdParam;
+@class KPUserUpdateParam;
+@class KPCollectGoodsParam;
+@class KPCollectStoreParam;
+@class KPGetReceiversParam;
+@class KPSetDefaultReceiverParam;
+@class KPNewReceiverParam;
+@class KPGetAreaParam;
+@class KPDeleteReceiverParam;
+@class KPUpdateRecevierParam;
+@class KPUserUpdateMobileParam;
+@class KPOrderCreateParam;
+@class KPMessageParam;
+@class KPOrderParam;
+@class KPProductCategoryIdParam;
+@class KPOrderDetailParam;
+@class KPAddBankCardParam;
+@class KPCollectionStoreListParam;
+@class KPCollectionProductsListParam;
+@class KPFeedbackParam;
+@class KPMoreProductsParam;
+@class KPSearchParam;
+@class KPconfirmReceiptParam;
+@class KPOrderPayParam;
+@class KPGetExpressInfoParam;
+@class KPPayBackOrderParam;
+@class KPApplyForPayBackParam;
+@class KPBalancePayParam;
+@class KPAssetsOrderDetailParam;
+
+
+@interface KPNetworkingTool : AFHTTPSessionManager
+
+/** 获取手机验证码 */
++ (void)getPhoneAuthCodeWithPhoneNumber:(NSString *)phoneNumber
+                                success:(void (^)(id result))success
+                                failure:(void (^)(NSError *error))failure;
+
+/** 验证手机验证码 */
++ (void)commitePhoneAuthCodeWithPhoneNumber:(NSString *)phoneNumber
+                                       code:(NSString *)code
+                                    success:(void (^)(id result))success
+                                    failure:(void (^)(NSError *error))failure;
+
+/** 重置登录密码 */
++ (void)resetPwdWithParam:(KPLoginRegistParam *)param
+                  success:(void (^)(id result))success
+                  failure:(void (^)(NSError *error))failure;
+
+#pragma mark - 支付相关请求
+/** 银联支付 */
++ (void)upPayWithParam:(KPOrderPayParam *)param
+               success:(void (^)(id result))success
+               failure:(void (^)(NSError *error))failure;
+
+/** 检查银联订单支付完成实际状态 */
++ (void)checkUpPayCompletionStateWithParam:(KPOrderPayParam *)param
+                                   success:(void (^)(id result))success
+                                   failure:(void (^)(NSError *error))failure;
+
+/** 检查支付宝订单支付完成实际状态 */
++ (void)checkAliPayCompletionStateWithParam:(KPOrderPayParam *)param
+                                    success:(void (^)(id result))success
+                                    failure:(void (^)(NSError *error))failure;
+
+/** 支付宝支付 */
++ (void)aliPayWithParam:(KPOrderPayParam *)param
+                success:(void (^)(id result))success
+                failure:(void (^)(NSError *error))failure;
+
+/** 查询用户零钱 */
++ (void)BalanceQuerySuccess:(void (^)(id result))success
+                    failure:(void (^)(NSError *error))failure;
+
+/** 用零钱支付 */
++ (void)BalancePayParam:(KPBalancePayParam *)param
+                success:(void (^)(id result))success
+                failure:(void (^)(NSError *error))failure;
+
+/** 微信支付 */
++ (void)weixinPayWithParam:(KPOrderPayParam *)param
+                   success:(void (^)(id result))success
+                   failure:(void (^)(NSError *error))failure;
+
+/** 检查微信订单支付完成实际状态 */
++ (void)checkWeiPayCompletionStateWithParam:(KPOrderPayParam *)param
+                                    success:(void (^)(id result))success
+                                    failure:(void (^)(NSError *error))failure;
+
+#pragma mark - 绑定银行卡相关请求
+/** 银行卡解绑 */
++ (void)bankCardDeleteWithId:(NSInteger)bankCardId
+                     success:(void (^)(id result))success
+                     failure:(void (^)(NSError *error))failure;
+
+/** 银行卡列表 */
++ (void)bankCardListSuccess:(void (^)(id result))success
+                    failure:(void (^)(NSError *error))failure;
+
+/** 添加银行卡 */
++ (void)addBankCardWithParam:(KPAddBankCardParam *)param
+                     success:(void (^)(id result))success
+                     failure:(void (^)(NSError *error))failure;
+
+/** 获取一级分类的商品 */
++ (void)productCategoryIdWithParam:(KPProductCategoryIdParam *)param
+                           success:(void (^)(id result))success
+                           failure:(void (^)(NSError *error))failure;
+
+/** 获取一级分类 */
++ (void)productCategoryWithSuccess:(void (^)(id result))success
+                           failure:(void (^)(NSError *error))failure;
+
+/**
+ *  获取发现列表
+ */
++ (void)discoveryWithSuccess:(void (^)(id result))success failure:(void (^)(NSError *error))failure;
+
+/**
+ *  上传用户头像请求
+ */
++ (void)uploadUserIconWithParam:(KPUploadParam *)param success:(void(^)(id result))success failure:(void(^)(NSError *error))failure;
+
+
+
+
+#pragma mark - 注册相关请求
+/** 检测是否注册 */
++ (void)checkPhoneWithParam:(NSString *)phone
+                    success:(void (^)(id result))success
+                    failure:(void (^)(NSError *error))failure;
+/**
+ *  修改登录密码请求
+ */
++ (void)changePwdWithParam:(KPChangePwdParam *)param
+                   success:(void(^)(id result))success
+                   failure:(void(^)(NSError *error))failure;
+
+/**
+ *  登录请求
+ */
++ (void)loginWithParam:(KPLoginRegistParam *)param
+               success:(void(^)(id result))success
+               failure:(void(^)(NSError *error))failure;
+
+/**
+ *  注册请求
+ */
++ (void)registWithParam:(KPLoginRegistParam *)param
+                success:(void(^)(id result))success
+                failure:(void(^)(NSError *error))failure;
+
+/** 验证支付密码 */
++ (void)checkPayPwdWithParam:(KPChangePayPwdParam *)param
+                     success:(void(^)(id result))success
+                     failure:(void(^)(NSError *error))failure;
+
+/**
+ *  修改支付密码请求
+ */
++ (void)changePayPwdWithParam:(KPChangePayPwdParam *)param
+                      success:(void(^)(id result))success
+                      failure:(void(^)(NSError *error))failure;
+
+#pragma mark - 首页相关请求
+/**
+ *  首页数据请求
+ */
++ (void)homeData:(void(^)(id result))success
+         failure:(void(^)(NSError *error))failure;
+
+/**
+ *  产品详情数据请求
+ */
++ (void)goodsDetailWithParam:(KPGoodsDetailParam *)param
+                     success:(void(^)(id result))success
+                     failure:(void(^)(NSError *error))failure;
+/**
+ *  商家详情数据请求
+ */
++ (void)shopDataWithParam:(KPShopDetailParam *)param
+                  success:(void(^)(id result))success
+                  failure:(void(^)(NSError *error))failure;
+
+/**
+ *  商家新上架数据请求
+ */
++ (void)shopNewGoodsWithParam:(KPShopNewGoosParam *)param
+                      success:(void(^)(id result))success
+                      failure:(void(^)(NSError *error))failure;
+
+/**
+ *  加载更多品牌列表
+ */
++ (void)loadMoreBrandsSuccess:(void(^)(id result))success
+                      failure:(void(^)(NSError *error))failure;
+
+/**
+ *  加载更多商品列表
+ */
++ (void)loadMoreProducts:(KPMoreProductsParam *)param
+                 Success:(void (^)(id result))success
+                 failure:(void (^)(NSError *error))failure;
+
+/**
+ *  收藏店铺
+ */
++ (void)CollectStore:(KPCollectStoreParam *)param
+             Success:(void(^)(id result))success
+             failure:(void(^)(NSError *error))failure;
+
+/**
+ *  获取收藏店铺列表
+ */
++ (void)GetStoresCollectionListSuccess:(void (^)(id result))success
+                               failure:(void (^)(NSError *error))failure;
+
+/**
+ *  取消所有收藏店铺
+ */
++ (void)CancelAllStoreCollectionList:(KPCollectionStoreListParam *)param
+                             Success:(void (^)(id result))success
+                             failure:(void (^)(NSError *error))failure;
+/**
+ *  收藏商品
+ */
++ (void)CollectProduct:(KPCollectGoodsParam *)param
+               Success:(void(^)(id result))success
+               failure:(void(^)(NSError *error))failure;
+
+/**
+ *  获取所有收藏商品列表
+ */
++ (void)GetProductsCollectionListSuccess:(void (^)(id result))success
+                                 failure:(void (^)(NSError *error))failure;
+
+/**
+ *  取消所有收藏商品
+ */
++ (void)CancelAllProductsCollection:(KPCollectionProductsListParam *)param
+                            Success:(void (^)(id result))success
+                            failure:(void (^)(NSError *error))failure;
+/**
+ *  获取全部消息
+ */
++ (void)GetAllMessageSuccess:(void (^)(id result))success
+                     failure:(void (^)(NSError *error))failure;
+
+/**
+ *  获取单条消息
+ */
++ (void)GetOneMessage:(NSString *)messageId
+              Success:(void (^)(id result))success
+              failure:(void (^)(NSError *error))failure;
+
+/** 获取全部商品 */
++ (void)GetAllProductsWithParam:(KPProductCategoryIdParam *)param
+                        success:(void (^)(id result))success
+                        failure:(void (^)(NSError *error))failure;
+/**
+ *  搜索
+ */
++ (void)search:(KPSearchParam *)param
+       Success:(void (^)(id result))success
+       failure:(void (^)(NSError *error))failure;
+
+/**
+ *  获取广告图
+ */
++ (void)GetAdvertisements:(void (^)(id result))success
+                  failure:(void (^)(NSError *error))failure;
+
+#pragma mark - 用户信息相关请求
+/**
+ *  更新用户信息
+ */
++ (void)userUpdateWithParam:(KPUserUpdateParam *)param
+                    success:(void(^)(id result))success
+                    failure:(void(^)(NSError *error))failure;
+
+/** 更新用户手机号 */
++ (void)userUpdateMobileWithParam:(KPUserUpdateMobileParam *)param
+                          success:(void (^)(id result))success
+                          failure:(void (^)(NSError *error))failure;
+
+
+#pragma mark - 购物车相关接口
+/**
+ *  获取购物车订单数量
+ */
++ (void)getCarItemCountSuccess:(void (^)(id result))success
+                       failure:(void (^)(NSError *error))failure;
+
+/** 订单详情 */
++ (void)orderDetailWithParam:(KPOrderDetailParam *)param
+                     success:(void (^)(id result))success
+                     failure:(void (^)(NSError *error))failure;
+
+/** 创建订单 */
++ (void)orderCreateWithParam:(KPOrderCreateParam *)param
+                     success:(void (^)(id result))success
+                     failure:(void (^)(NSError *error))failure;
+
+/** 取消订单 */
++ (void)orderCancelWithParam:(KPOrderDetailParam *)param
+                     success:(void (^)(id result))success
+                     failure:(void (^)(NSError *error))failure;
+
+/** 删除购物车中商品 */
++ (void)cartDeleteWithParam:(KPDeleteSubsidizeParam *)param
+                    success:(void (^)(id result))success
+                    failure:(void (^)(NSError *error))failure;
+
+/**
+ *  更新G库
+ */
++ (void)cartUpdateWithParam:(KPUpdateSubsidizeParam *)param
+                    success:(void (^)(id result))success
+                    failure:(void (^)(NSError *error))failure;
+
+/**
+ *  获取G库请求
+ */
++ (void)cartGetWithSuccess:(void (^)(id result))success
+                   failure:(void (^)(NSError *error))failure;
+
+/** 更新地址 */
++ (void)updateReceiverWithParam:(KPUpdateRecevierParam *)param
+                        success:(void (^)(id result))success
+                        failure:(void (^)(NSError *error))failure;
+
+/** 删除地址 */
++ (void)deleteReceiverWithParam:(KPDeleteReceiverParam *)param
+                        success:(void (^)(id result))success
+                        failure:(void (^)(NSError *error))failure;
+
+/**
+ *  获取地区
+ */
++ (void)getAreaWithParam:(KPGetAreaParam *)param
+                 success:(void (^)(id result))success
+                 failure:(void (^)(NSError *error))failure;
+
+/**
+ *  新地址
+ */
++ (void)newReceiverWithParam:(KPNewReceiverParam *)param
+                     success:(void (^)(id result))success
+                     failure:(void (^)(NSError *error))failure;
+
+/**
+ *  设置默认地址
+ */
++ (void)setDefaultReceiverWithParam:(KPSetDefaultReceiverParam *)param
+                            success:(void (^)(id result))success
+                            failure:(void (^)(NSError *error))failure;
+
+/**
+ *  获取地址列表
+ */
++ (void)getReceiversWithParam:(KPGetReceiversParam *)param
+                      success:(void (^)(id result))success
+                      failure:(void (^)(NSError *error))failure;
+#pragma mark - 我的模块相关接口
+/**
+ *  获取订单信息
+ */
++ (void)orderWithParam:(KPOrderParam *)param
+               Success:(void (^)(id result))success
+               failure:(void (^)(NSError *error))failure;
+
+
+/**
+ *  获取我的页面数据
+ */
++ (void)GetProfileData:(void (^)(id result))success
+               failure:(void (^)(NSError *error))failure;
+
+/**
+ *  提交意见反馈
+ */
++ (void)commitFeedback:(KPFeedbackParam *)param
+               Success:(void (^)(id result))success
+               failure:(void (^)(NSError *error))failure;
+
+
+/**
+ *  确认收货 
+ */
++ (void)receiveOrder:(KPconfirmReceiptParam *)param
+             Success:(void (^)(id result))success
+             failure:(void (^)(NSError *error))failure;
+
+/** 获取物流信息 */
++ (void)GetExpressInfoWithParam:(KPGetExpressInfoParam *)param
+                        success:(void (^)(id result))success
+                        failure:(void (^)(NSError *error))failure;
+
+#pragma mark - 消费资产相关请求
+/** 获取消费资产订单 */
++ (void)GetAssetsOrdersWithParam:(KPPayBackOrderParam *)param
+                         success:(void (^)(id result))success
+                         failure:(void (^)(NSError *error))failure;
+/** 申请贴现 */
++ (void)ApplyAssetsWithParam:(KPApplyForPayBackParam *)param
+                     success:(void (^)(id result))success
+                     failure:(void (^)(NSError *error))failure;
+/** 获取消费资产详情 */
++ (void)AssetsDetailWithParam:(KPAssetsOrderDetailParam *)param
+                      success:(void (^)(id result))success
+                      failure:(void (^)(NSError *error))failure;
+
+
+#pragma mark - 新版本相关接口
+/**
+ *  获取已经上线的版本的版本号
+ */
++ (void)GetNewVersionSuccess:(void (^)(id result))success
+                     failure:(void (^)(NSError *error))failure;
+
+/** 设置新版本更新状态 */
++ (void)GetNewVersionTypeSuccess:(void (^)(id result))success
+                         failure:(void (^)(NSError *error))failure;
+
+@end

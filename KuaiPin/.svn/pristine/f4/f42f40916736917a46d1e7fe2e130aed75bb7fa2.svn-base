@@ -1,0 +1,49 @@
+//
+//  KPSMSTool.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/9.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPSMSTool.h"
+
+NSString * const resCode = @"code";
+
+@implementation KPSMSTool
+
++ (void)getVerificationCodeByPhoneNumber:(NSString *)phoneNumber result:(SMSResultHandler)handler {
+
+    [KPNetworkingTool getPhoneAuthCodeWithPhoneNumber:phoneNumber success:^(id result) {
+        NSDictionary *dict = (NSDictionary *)result;
+        NSInteger code = [dict[resCode] integerValue];
+        if (code || result == nil) {
+            NSError *error = [NSError errorWithDomain:@"失败" code:code userInfo:nil];
+            handler(error);
+        }else {
+            handler(nil);
+        }
+    } failure:^(NSError *error) {
+        handler(error);
+    }];
+    
+}
+
++ (void)commitVerificationCode:(NSString *)code phoneNumber:(NSString *)phoneNumber result:(SMSResultHandler)handler {
+
+    [KPNetworkingTool commitePhoneAuthCodeWithPhoneNumber:phoneNumber code:code success:^(id result) {
+        NSDictionary *dict = (NSDictionary *)result;
+        NSInteger code = [dict[resCode] integerValue];
+        if (code || result == nil) {
+            NSError *error = [NSError errorWithDomain:@"失败" code:code userInfo:nil];
+            handler(error);
+        }else {
+            handler(nil);
+        }
+    } failure:^(NSError *error) {
+        handler(error);
+    }];
+
+}
+
+@end

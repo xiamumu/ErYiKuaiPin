@@ -1,0 +1,210 @@
+//
+//  KPAdViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/23.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//  广告页面
+
+#import "KPAdViewController.h"
+#import "KPTabBarViewController.h"
+#import <SDCycleScrollView.h>
+#import "KPActivityWebViewController.h"
+#import "KPNavigationController.h"
+#import "KPBanner.h"
+
+@interface KPAdViewController ()<SDCycleScrollViewDelegate>
+
+@property (nonatomic, strong) NSTimer *timer;
+
+@property (nonatomic, strong) KPButton *enterBtn;
+
+@property (nonatomic, assign) NSUInteger time;
+
+@property (nonatomic, strong) SDCycleScrollView *scrollView;
+
+@property (nonatomic, strong) UIPageControl *pageControl;
+
+@property (nonatomic, strong) NSArray<KPBanner *> *banners;
+
+
+@end
+
+@implementation KPAdViewController
+
+- (void)enterBtnAction {
+    [self changeRootViewControllerWithWebViewController:nil];
+}
+
+#pragma mark - SDCycleScrollViewDelegate
+/** 点击图片回调 */
+- (void)cycleScrollView:(SDCycleScrollView *)cycleScrollView didSelectItemAtIndex:(NSInteger)index {
+    KPBanner *banner = self.banners[index];
+    NSString *urlStr = banner.url;
+
+    KPActivityWebViewController *webVc = [KPActivityWebViewController new];
+    webVc.urlStr = urlStr;
+    webVc.shareUrl = banner.shareUrl;
+    webVc.sharedTitle = banner.top;
+    webVc.sharedMessage = banner.content;
+//    webVc.sharedImgSrc = banner.shareSrc;
+    webVc.sharedImg = banner.icon;
+
+    if (urlStr.length == 0) webVc = nil;
+
+    [self changeRootViewControllerWithWebViewController:webVc];
+}
+
+/** 图片滚动回调 */
+- (void)cycleScrollView:(SDCycleScrollView *)cycleScrollView didScrollToIndex:(NSInteger)index {
+    self.pageControl.currentPage = index;
+}
+
+#pragma mark - 生命周期
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [self setupUI];
+
+    __weak typeof (self) weakSelf = self;
+
+    [KPNetworkingTool GetAdvertisements:^(id result) {
+        
+        if (CODE == 0) {
+
+            weakSelf.banners = [KPBanner mj_objectArrayWithKeyValuesArray:result[@"data"][@"bannerList"]];
+            NSMutableArray *imgSrcs = [NSMutableArray arrayWithCapacity:self.banners.count];
+
+            [weakSelf.banners enumerateObjectsUsingBlock:^(KPBanner *obj, NSUInteger idx, BOOL * _Nonnull stop) {
+                [imgSrcs addObject:obj.image];
+            }];
+
+            weakSelf.scrollView.imageURLStringsGroup = imgSrcs;
+
+            weakSelf.pageControl.numberOfPages = imgSrcs.count;
+
+//            3s后调到下一个主界面
+//            weakSelf.time = 3;
+//            weakSelf.timer = [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:@selector(changeTimeText) userInfo:nil repeats:YES];
+
+        }
+     
+    } failure:^(NSError *error) {
+        WHYNSLog(@"%@", error);
+    }];
+
+//    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//        [weakSelf changeRootViewController];
+//    });
+}
+
+- (void)dealloc {
+    [self.timer invalidate];
+    self.timer = nil;
+}
+
+#pragma mark - 私有方法
+- (void)setupUI {
+
+    UIView *sep = [UIView new];
+    sep.backgroundColor = HexColor(#eeeeee);
+
+    UIView *whiteView = [UIView new];
+    whiteView.backgroundColor = WhiteColor;
+
+    [self.view addSubview:self.scrollView];
+    [self.view addSubview:self.pageControl];
+    [self.view addSubview:sep];
+    [self.view addSubview:whiteView];
+    [whiteView addSubview:self.enterBtn];
+
+    __weak typeof (self) weakSelf = self;
+
+    CGFloat whiteH = 82;
+    CGFloat pageControlH = 11;
+    CGFloat pageControlW = 32;
+    CGFloat pageControlMargin = 12;
+    CGFloat sepH = 1;
+
+    [whiteView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.bottom.mas_equalTo(weakSelf.view);
+        make.height.mas_equalTo(whiteH);
+    }];
+
+    [sep mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.mas_equalTo(weakSelf.view);
+        make.bottom.mas_equalTo(whiteView.mas_top);
+        make.height.mas_equalTo(sepH);
+    }];
+
+    [self.pageControl mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.mas_equalTo(whiteView);
+        make.bottom.mas_equalTo(sep.mas_top).offset(-pageControlMargin);
+        make.height.mas_equalTo(pageControlH);
+        make.width.mas_equalTo(pageControlW);
+    }];
+
+    [self.enterBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.center.mas_equalTo(whiteView);
+    }];
+    
+}
+
+- (void)changeRootViewControllerWithWebViewController:(KPActivityWebViewController *)webViewController {
+    UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    KPTabBarViewController *tabBarVc = [[KPTabBarViewController alloc] init];
+    window.rootViewController = tabBarVc;
+
+    if (webViewController) {
+        KPNavigationController *nav = (KPNavigationController *)tabBarVc.viewControllers.firstObject;
+        [nav pushViewController:webViewController animated:YES];
+    }
+
+}
+
+- (void)changeTimeText {
+
+    if (self.time == 1) {
+        [self.timer invalidate];
+        self.timer = nil;
+        return;
+    }
+
+    self.time--;
+
+}
+
+#pragma mark - 懒加载
+- (KPButton *)enterBtn {
+    if (_enterBtn == nil) {
+        _enterBtn = [KPButton new];
+        _enterBtn.adjustsImageWhenHighlighted = NO;
+        [_enterBtn setImage:[UIImage imageNamed:@"enterHome"] forState:UIControlStateNormal];
+        [_enterBtn addTarget:self action:@selector(enterBtnAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _enterBtn;
+}
+
+- (SDCycleScrollView *)scrollView {
+    if (_scrollView == nil) {
+        _scrollView = [SDCycleScrollView cycleScrollViewWithFrame:self.view.frame
+                                                         delegate:self
+                                                 placeholderImage:[UIImage imageNamed:@"loading_page"]];
+//        _scrollView.infiniteLoop = NO;
+        _scrollView.showPageControl = NO;
+        _scrollView.backgroundColor = WhiteColor;
+    }
+    return _scrollView;
+}
+
+- (UIPageControl *)pageControl {
+    if (_pageControl == nil) {
+        _pageControl = [UIPageControl new];
+        _pageControl.hidesForSinglePage = YES;
+        _pageControl.currentPageIndicatorTintColor = OrangeColor;
+        _pageControl.pageIndicatorTintColor = HexColor(#e5e5e5);
+    }
+    return _pageControl;
+}
+
+@end

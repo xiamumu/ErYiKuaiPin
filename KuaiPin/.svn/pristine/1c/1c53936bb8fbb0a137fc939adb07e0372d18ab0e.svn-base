@@ -1,0 +1,122 @@
+//
+//  KPIDCardInputView.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/8/25.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPIDCardInputView.h"
+
+
+
+@interface KPIDCardInputView ()
+
+
+
+@end
+
+@implementation KPIDCardInputView
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self setupUI];
+    }
+    return self;
+}
+
+- (void)setupUI {
+
+    CGFloat screenW = [UIScreen mainScreen].bounds.size.width;
+    CGFloat screenH = [UIScreen mainScreen].bounds.size.height;
+
+    NSInteger maxCol = 3;
+    CGFloat btnW = screenW / maxCol;
+    CGFloat btnH = 54;
+    CGFloat sepWH = 1;
+
+    for (int i = 0; i < 12; i++) {
+
+        NSInteger col = i % maxCol;
+        NSInteger row = i / maxCol;
+
+        CGFloat x = btnW * col;
+        CGFloat y = btnH * row;
+
+        UIButton *btn = [[UIButton alloc] initWithFrame:CGRectMake(x, y, btnW, btnH)];
+        [self setupButton:btn withIndex:i];
+
+
+        UIView *sep;
+        CGFloat sepX = x - sepWH * 0.5;
+        CGFloat sepY = y - sepWH * 0.5;
+        switch (i) {
+            case 1:
+            case 2:
+                sep = [[UIView alloc] initWithFrame:CGRectMake(sepX, 0, sepWH, screenH)];
+                break;
+            case 3:
+            case 6:
+            case 9:
+
+                break;
+            default:
+                break;
+        }
+        sep.backgroundColor = [UIColor lightGrayColor];
+
+        [self addSubview:sep];
+
+    }
+
+    UIView *topSep = [[UIView alloc] initWithFrame:CGRectMake(0, 0, screenW, sepWH)];
+    topSep.backgroundColor = [UIColor lightGrayColor];
+    [self addSubview:topSep];
+
+}
+
+- (void)setupButton:(UIButton *)btn withIndex:(int)i {
+
+    [self setWhiteBackGroundButton:btn];
+    [btn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+
+    NSString *btnTitle = @"";
+    switch (i) {
+        case 9:
+            btnTitle = @"X";
+            break;
+        case 10:
+            btnTitle = @"0";
+            break;
+        case 11:
+        {
+            btnTitle = @"";
+            [btn setImage:[UIImage imageNamed:@"goback"] forState:UIControlStateNormal];
+        }
+            break;
+        default:
+            btnTitle = [NSString stringWithFormat:@"%d", i + 1];
+            break;
+    }
+    [btn setTitle:btnTitle forState:UIControlStateNormal];
+
+    btn.titleLabel.font = [UIFont systemFontOfSize:20];
+
+    [self addSubview:btn];
+
+}
+
+- (void)setupSepWithIndex:(int)i sepH:(CGFloat)sepH {
+
+}
+
+- (void)setWhiteBackGroundButton:(UIButton *)btn {
+    btn.backgroundColor = [UIColor whiteColor];
+}
+
+- (void)setGrayBackGroundButton:(UIButton *)btn {
+    btn.backgroundColor = [UIColor lightGrayColor];
+}
+
+@end

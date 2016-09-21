@@ -1,0 +1,173 @@
+//
+//  KPHomePageHeaderView.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/9/1.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPHomePageHeaderView.h"
+#import "SDCycleScrollView.h"
+#import "KPHomePageItem.h"
+#import "KPBanner.h"
+#import "UIButton+WebCache.h"
+#import "KPActivityBanner.h"
+
+
+@interface KPHomePageHeaderView ()<SDCycleScrollViewDelegate>
+
+@property (nonatomic, weak) SDCycleScrollView *bannerView;
+
+@property (nonatomic, weak) UIButton *leftItem;
+
+@property (nonatomic, weak) UIButton *rightTopItem;
+
+@property (nonatomic, weak) UIButton *rightBottomItem;
+
+@end
+@implementation KPHomePageHeaderView
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        
+        // 1、创建bannerView
+        SDCycleScrollView *bannerView = [SDCycleScrollView cycleScrollViewWithFrame:CGRectMake(0, 0, SCREEN_W, ScaleHeight(230)) delegate:self placeholderImage:nil];
+        bannerView.backgroundColor = BaseColor;
+        bannerView.pageControlAliment = SDCycleScrollViewPageContolAlimentCenter;
+        bannerView.currentPageDotColor = OrangeColor;
+        bannerView.placeholderImage = [UIImage imageNamed:@"top_banner_img"];
+        [self addSubview:bannerView];
+        self.bannerView = bannerView;
+        
+        UIButton *leftItem = [UIButton new];
+//        leftItem.backgroundColor = RandomColor;
+        leftItem.contentMode = UIViewContentModeScaleAspectFill;
+        [leftItem setBackgroundImage:[UIImage imageNamed:@"356"] forState:UIControlStateNormal];
+        [leftItem addTarget:self action:@selector(leftItemClick:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:leftItem];
+        self.leftItem = leftItem;
+        
+        UIButton *rightTopItem = [UIButton new];
+        rightTopItem.contentMode = UIViewContentModeScaleAspectFill;
+        [rightTopItem setBackgroundImage:[UIImage imageNamed:@"394"] forState:UIControlStateNormal];
+        [rightTopItem addTarget:self action:@selector(rightTopItemClick:) forControlEvents:UIControlEventTouchUpInside];
+//        rightTopItem.backgroundColor = RandomColor;
+        [self addSubview:rightTopItem];
+        self.rightTopItem = rightTopItem;
+        
+        UIButton *rightBottomItem = [UIButton new];
+        rightBottomItem.contentMode = UIViewContentModeScaleAspectFill;
+        [rightBottomItem setBackgroundImage:[UIImage imageNamed:@"394"] forState:UIControlStateNormal];
+        [rightBottomItem addTarget:self action:@selector(rightBottomItemClick:) forControlEvents:UIControlEventTouchUpInside];
+//        rightBottomItem.backgroundColor = RandomColor;
+        [self addSubview:rightBottomItem];
+        self.rightBottomItem = rightBottomItem;
+        __weak typeof (self) weakSelf = self;
+        
+        [bannerView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.left.right.mas_equalTo(weakSelf);
+            make.height.mas_equalTo(ScaleHeight(230));
+        }];
+        
+        [leftItem mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.mas_equalTo(bannerView.mas_bottom).offset(CommonMargin);
+            make.left.mas_equalTo(weakSelf);
+            make.height.mas_equalTo(ScaleHeight(140));
+            make.width.mas_equalTo(ScaleWidth(178));
+        }];
+        
+        [rightTopItem mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.mas_equalTo(leftItem);
+            make.right.mas_equalTo(weakSelf);
+            make.left.mas_equalTo(leftItem.mas_right);
+            make.height.mas_equalTo(ScaleHeight(70));
+        }];
+        
+        [rightBottomItem mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.mas_equalTo(rightTopItem.mas_bottom);
+            make.right.mas_equalTo(weakSelf);
+            make.left.mas_equalTo(leftItem.mas_right);
+            make.height.mas_equalTo(ScaleHeight(70));
+        }];
+        
+    }
+    return self;
+}
+
+- (void)leftItemClick:(UIButton *)item
+{
+    if (self.leftItemAciton) {
+        self.leftItemAciton(item);
+    }
+}
+
+- (void)rightTopItemClick:(UIButton *)item
+{
+    
+    if (self.rightTopItemAciton) {
+        self.rightTopItemAciton(item);
+    }
+}
+
+
+- (void)rightBottomItemClick:(UIButton *)item
+{
+    if (self.rightBottomItemAciton) {
+        self.rightBottomItemAciton(item);
+    }
+}
+
+- (void)setBannerImages:(NSArray *)bannerImages
+{
+    _bannerImages = bannerImages;
+    
+    // 设置banner滚动图片
+    
+    NSArray *images = [bannerImages valueForKeyPath:@"image"];
+    
+    self.bannerView.imageURLStringsGroup = images;
+}
+
+- (void)setActivityBannerList:(NSArray<KPActivityBanner *> *)activityBannerList
+{
+    _activityBannerList = activityBannerList;
+    if (activityBannerList.count > 0) {
+        
+        for (KPActivityBanner *activity in activityBannerList) {
+            switch (activity.sort.integerValue) {
+                case 1: // 二一时间
+                {
+                    NSURL *imageUrl = [NSURL URLWithString:activity.activitySrc];
+                    [self.leftItem sd_setImageWithURL:imageUrl forState:UIControlStateNormal placeholderImage:[UIImage imageNamed:@"356"]];
+                }
+                    break;
+                case 2: // 邀请有奖
+                {
+                    NSURL *imageUrl = [NSURL URLWithString:activity.activitySrc];
+                    [self.rightTopItem sd_setImageWithURL:imageUrl forState:UIControlStateNormal placeholderImage:[UIImage imageNamed:@"394"]];
+                    
+                }
+                    break;
+                case 3: // 新手特权
+                {
+                    NSURL *imageUrl = [NSURL URLWithString:activity.activitySrc];
+                    [self.rightBottomItem sd_setImageWithURL:imageUrl forState:UIControlStateNormal placeholderImage:[UIImage imageNamed:@"394"]];
+                }
+                    break;
+            }
+        }
+    }
+}
+- (void)cycleScrollView:(SDCycleScrollView *)cycleScrollView didSelectItemAtIndex:(NSInteger)index
+{
+//    WHYNSLog(@"%@", cycleScrollView.imageURLStringsGroup);
+    
+    
+    if (self.didSelectCycleScrollViewItem) {
+        self.didSelectCycleScrollViewItem(index);
+    }
+}
+
+@end

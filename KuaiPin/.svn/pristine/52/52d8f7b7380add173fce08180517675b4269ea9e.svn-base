@@ -1,0 +1,221 @@
+//
+//  KPOrderCommitGoodInfoCell.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/4/27.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPOrderCommitGoodInfoCell.h"
+#import "KPGoodModel.h"
+#import <YYText.h>
+
+@interface KPOrderCommitGoodInfoCell ()
+
+@property (nonatomic, strong) KPGoodModel *goodModel;
+
+@property (nonatomic, strong) KPSeparatorView *bottomSep;
+
+@property (nonatomic, strong) UIImageView *iconView;
+
+@property (nonatomic, strong) UILabel *titleLB;
+
+@property (nonatomic, strong) UILabel *numberLB;
+
+@property (nonatomic, strong) UILabel *priceLB;
+
+@property (nonatomic, strong) UILabel *standardLB;
+
+@end
+
+@implementation KPOrderCommitGoodInfoCell
+
+- (void)setModel:(__kindof KPBaseModel *)model {
+    super.model = model;
+    self.goodModel = model;
+    
+    [self setTitleWithString:self.goodModel.productName];
+    
+    [self.iconView sd_setImageWithURL:[NSURL URLWithString:self.goodModel.productImage]
+                     placeholderImage:[UIImage imageNamed:@"subsidizeGoods_Placeholder"]];
+
+    self.standardLB.text = @"这是商品规格";
+    
+    self.numberLB.text = [NSString stringWithFormat:@"X %@", self.goodModel.productAmount];
+    
+    self.priceLB.text = [NSString stringWithFormat:@"￥%.2f", [self.goodModel.productPrice floatValue]];
+}
+
+- (void)setShowBottomSep:(BOOL)showBottomSep {
+    _showBottomSep = showBottomSep;
+    
+    self.bottomSep.hidden = !showBottomSep;
+}
+
++(instancetype)cellWithTableView:(UITableView *)tableView {
+    
+    static NSString *ID = @"KPOrderCommitGoodInfoCell";
+    
+    KPOrderCommitGoodInfoCell *cell = [tableView dequeueReusableCellWithIdentifier:ID];
+    
+    if (cell == nil) {
+        cell = [[KPOrderCommitGoodInfoCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:ID];
+    }
+    
+    return cell;
+}
+
++ (CGFloat)cellHeight {
+    return 121;
+}
+
+-(instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
+    if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
+        [self setupUI];
+        self.selectionStyle = UITableViewCellSelectionStyleNone;
+    }
+    return self;
+}
+
+-(void)setupUI {
+    
+    self.backgroundColor = WhiteColor;
+    
+    [self addSubview:self.iconView];
+    [self addSubview:self.titleLB];
+    [self addSubview:self.standardLB];
+    [self addSubview:self.numberLB];
+    [self addSubview:self.priceLB];
+    [self addSubview:self.bottomSep];
+
+    self.standardLB.hidden = YES;
+    
+    __weak typeof(self) weakSelf = self;
+    CGFloat leftTopRight = 10;
+    CGFloat sepH = 1;
+    CGSize iconSize = CGSizeMake(101, 101);
+    CGFloat titleH = 40;
+    CGFloat numberTop = 8;
+    CGFloat numberH = 13;
+    
+    [self.bottomSep mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf).offset(leftTopRight);
+        make.right.bottom.mas_equalTo(weakSelf);
+        make.height.mas_equalTo(sepH);
+    }];
+    
+    [self.iconView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.top.mas_equalTo(weakSelf).offset(leftTopRight);
+        make.size.mas_equalTo(iconSize);
+    }];
+    
+    [self.titleLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.iconView.mas_right).offset(leftTopRight);
+        make.top.mas_equalTo(weakSelf.iconView);
+        make.right.mas_equalTo(weakSelf).offset(-leftTopRight);
+        make.height.mas_equalTo(titleH);
+    }];
+
+    CGFloat standardH = 11;
+    CGFloat standardTop = 10;
+    [self.standardLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.titleLB);
+        make.top.mas_equalTo(weakSelf.titleLB.mas_bottom).offset(standardTop);
+        make.height.mas_equalTo(standardH);
+    }];
+    
+    [self.numberLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.mas_equalTo(weakSelf.standardLB);
+        make.top.mas_equalTo(weakSelf.standardLB.mas_bottom).offset(numberTop);
+        make.height.mas_equalTo(numberH);
+    }];
+
+    [self.priceLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.numberLB);
+        make.bottom.mas_equalTo(weakSelf.iconView);
+        make.size.mas_equalTo(weakSelf.numberLB);
+    }];
+    
+}
+
+- (void)setTitleWithString:(NSString *)string {
+    
+    NSMutableAttributedString *attrStr = [[NSMutableAttributedString alloc] initWithString:string];
+    attrStr.yy_lineSpacing = 4;
+    attrStr.yy_lineBreakMode = NSLineBreakByTruncatingTail;
+    self.titleLB.attributedText = [attrStr copy];
+    
+}
+
+#pragma mark - 懒加载
+- (KPSeparatorView *)bottomSep {
+    if (_bottomSep == nil) {
+        _bottomSep = [KPSeparatorView new];
+    }
+    return _bottomSep;
+}
+
+- (UIImageView *)iconView {
+    if (_iconView == nil) {
+        _iconView = [UIImageView new];
+    }
+    return _iconView;
+}
+
+- (UILabel *)titleLB {
+    if (_titleLB == nil) {
+        _titleLB = [UILabel new];
+        _titleLB.font = UIFont_15;
+        _titleLB.numberOfLines = 2;
+        _titleLB.textColor = BlackColor;
+    }
+    return _titleLB;
+}
+
+- (UILabel *)numberLB {
+    if (_numberLB == nil) {
+        _numberLB = [UILabel new];
+        _numberLB.font = UIFont_13;
+        _numberLB.textColor = GrayColor;
+    }
+    return _numberLB;
+}
+
+- (UILabel *)priceLB {
+    if (_priceLB == nil) {
+        _priceLB = [UILabel new];
+        _priceLB.font = UIFont_13;
+        _priceLB.textColor = LightRedColor;
+    }
+    return _priceLB;
+}
+
+- (UILabel *)standardLB {
+    if (_standardLB == nil) {
+        _standardLB = [UILabel new];
+        _standardLB.font = UIFont_14;
+        _standardLB.textColor = GrayColor;
+    }
+    return _standardLB;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@end

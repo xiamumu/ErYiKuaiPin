@@ -1,0 +1,66 @@
+//
+//  KPGoodsKindChooseView.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/7/12.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPGoodsKindChooseView.h"
+#import "KPSpecList.h"
+#import "KPSingleChooseView.h"
+
+@interface KPGoodsKindChooseView ()
+
+@property (nonatomic, weak) KPSingleChooseView *singleView;
+
+@end
+
+@implementation KPGoodsKindChooseView
+
+
+- (void)setSpecList:(NSArray<KPSpecList *> *)specList
+{
+    _specList = specList;
+    
+    
+    NSArray *spNames = [specList valueForKeyPath:@"spName"];
+    
+    NSArray *allSpecValues = [specList valueForKeyPath:@"specValue"];
+    
+//    WHYNSLog(@"=======spNames ： %@ =======specValues ：%@=======", spNames, allSpecValues);
+
+    for (int i = 0; i < spNames.count ; i++) {
+        
+        KPSingleChooseView *singleView = [[KPSingleChooseView alloc] init];
+        singleView.title = spNames[i];
+        singleView.specValues = allSpecValues[i];
+        [self addSubview:singleView];
+        
+        __weak typeof (self) weakSelf = self;
+        [singleView mas_makeConstraints:^(MASConstraintMaker *make) {
+            
+            if (i == 0) {
+                
+                make.top.mas_equalTo(weakSelf);
+            }
+            else
+            {
+                make.top.mas_equalTo(weakSelf.singleView.mas_bottom);
+            }
+            
+            make.left.right.mas_equalTo(weakSelf);
+        }];
+        
+        self.singleView = singleView;
+        
+        if (i == spNames.count - 1) {
+            
+            [self mas_makeConstraints:^(MASConstraintMaker *make) {
+                make.bottom.mas_equalTo(singleView.mas_bottom);
+            }];
+        }
+    }
+}
+
+@end

@@ -1,0 +1,20 @@
+//
+//  KPUpdateSubsidizeParam.h
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/31.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPBaseParam.h"
+
+@interface KPUpdateSubsidizeParam : KPBaseParam
+
+@property (nonatomic, copy) NSString *amount;
+
+@property (nonatomic, strong) NSNumber *productId;
+
+/***  常规参数   多个参数用,点隔开 */
+@property (nonatomic, copy) NSString *specIds;
+
+@end

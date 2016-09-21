@@ -1,0 +1,22 @@
+//
+//  KPGoodsDetailInfoView.h
+//  KuaiPin
+//
+//  Created by 21_xm on 16/8/30.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface KPGoodsDetailInfoView : UIView
+
+@property (nonatomic, copy) NSString *productName;
+
+@property (nonatomic, copy) NSString *productPrice;
+
+
+@property (nonatomic, copy) void (^checkAssetExplain)();
+
++ (instancetype)detailInfoView;
+
+@end

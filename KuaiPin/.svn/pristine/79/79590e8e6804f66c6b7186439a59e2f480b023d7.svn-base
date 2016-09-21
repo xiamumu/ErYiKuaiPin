@@ -1,0 +1,109 @@
+
+//
+//  KPShopSectionHeader.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/6.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPShopSectionHeader.h"
+
+@interface KPShopSectionHeader ()
+
+@property (nonatomic, weak) KPButton *allGoodsBtn;
+@property (nonatomic, weak) KPButton *newgoodsBtn;
+@property (nonatomic, weak) UIView *line;
+@property (nonatomic, weak) UIView *selectedLine;
+@property (nonatomic, weak) KPButton *selectedBtn;
+
+@end
+@implementation KPShopSectionHeader
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.backgroundColor = WhiteColor;
+        KPButton *allGoodsBtn = [self addBtnWithTitle:@"全部商品"];
+        allGoodsBtn.tag = 20;
+        [self addSubview:allGoodsBtn];
+        
+        self.allGoodsBtn = allGoodsBtn;
+        KPButton *newgoodsBtn = [self addBtnWithTitle:@"新上架"];
+        newgoodsBtn.tag = 21;
+        [self addSubview:newgoodsBtn];
+        self.newgoodsBtn = newgoodsBtn;
+        
+        UIView *selectedLine = [[UIView alloc] init];
+        selectedLine.backgroundColor = OrangeColor;
+        [self addSubview:selectedLine];
+        self.selectedLine = selectedLine;
+        
+        UIView *line = [[UIView alloc] init];
+        line.backgroundColor = SeperatorColor;
+        [self addSubview:line];
+        self.line = line;
+        
+        [self chooseAction:allGoodsBtn];
+    }
+    return self;
+}
+
+- (KPButton *)addBtnWithTitle:(NSString *)title
+{
+    KPButton *btn = [[KPButton alloc] init];
+    [btn setTitle:title forState:UIControlStateNormal];
+    [btn setTitleColor:HexColor(#8a8a8a) forState:UIControlStateNormal];
+    [btn setTitleColor:HexColor(#191919) forState:UIControlStateSelected];
+    btn.titleLabel.font = UIFont_14;
+    [btn addTarget:self action:@selector(chooseAction:) forControlEvents:UIControlEventTouchDown];
+    return btn;
+}
+
+- (void)chooseAction:(KPButton *)chooseBtn
+{
+    if (chooseBtn.tag == 20) {
+        if ([self.delegate respondsToSelector:@selector(shopSectionHeader:didSelectedLeftBtn:)]) {
+            [self.delegate shopSectionHeader:self didSelectedLeftBtn:chooseBtn];
+        }
+    }
+    else
+    {
+        if ([self.delegate respondsToSelector:@selector(shopSectionHeader:didSelectedRightBtn:)]) {
+            [self.delegate shopSectionHeader:self didSelectedRightBtn:chooseBtn];
+        }
+    }
+    
+    self.selectedBtn.selected = NO;
+    chooseBtn.selected = YES;
+    self.selectedBtn = chooseBtn;
+    self.selectedLine.centerX = chooseBtn.centerX;
+    
+}
+
+- (void)layoutSubviews
+{
+    __weak typeof (self) weakSelf = self;
+    [self.allGoodsBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf);
+        make.centerY.mas_equalTo(weakSelf);
+        make.size.mas_equalTo(CGSizeMake(weakSelf.width * 0.5, weakSelf.height));
+    }];
+    
+    [self.newgoodsBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(weakSelf);
+        make.centerY.mas_equalTo(weakSelf);
+        make.size.mas_equalTo(CGSizeMake(weakSelf.width * 0.5, weakSelf.height));
+    }];
+    [self.line mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.bottom.mas_equalTo(weakSelf);
+        make.height.mas_equalTo(1);
+    }];
+    
+    self.selectedLine.height = 3;
+    self.selectedLine.y = self.height - self.selectedLine.height;
+    self.selectedLine.width = self.width * 0.5;
+}
+
+@end

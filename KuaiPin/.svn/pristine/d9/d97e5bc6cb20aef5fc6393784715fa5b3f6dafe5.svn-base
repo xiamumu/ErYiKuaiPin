@@ -1,0 +1,185 @@
+//
+//  AppDelegate.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/4/25.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "AppDelegate.h"
+#import "KPRootVcTool.h"
+#import "KPAppCatchExceptionHandler.h"
+
+#import "KPNavigationController.h"
+#import "KPLoginRegisterViewController.h"
+#import "KPNewPayPwdViewController.h"
+#import "KPCommitAuthCodeViewController.h"
+
+#import <JPFPSStatus.h>
+#import "JPUSHService.h"
+#import "RealReachability.h"
+#import "KPNetworkingStatusView.h"
+#import "AFNetworkReachabilityManager.h"
+#import "KPPayManager.h"
+#import "KPSharedTool.h"
+
+
+#define JPUSHAppKey @"b5402a3c6d3207bd65c226ee"
+
+@interface AppDelegate ()
+
+@end
+
+@implementation AppDelegate
+
+#pragma mark - 系统方法
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+
+    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    self.window.backgroundColor = [UIColor whiteColor];
+    [KPRootVcTool rootVcWithKeyWindow:self.window];
+    
+//    WHYNSLog(@"%@", [NSBundle mainBundle]);
+
+    /** 查看手机刷新频率 */
+#if defined(DEBUG)||defined(_DEBUG)
+    [[JPFPSStatus sharedInstance] open];
+#endif
+    
+    // 添加极光推送
+    [self setupJPushWithOptions:launchOptions];
+    
+//    开始监听网络状态
+    [self startNetworkMonitoring];
+
+//    注册微信API
+    [WXApi registerApp:WXAPPID];
+
+//    友盟统计
+    [KPStatisticsTool registUMAnalyticsConfig];
+//    [KPStatisticsTool lookupDeviceId];
+    
+    // 友盟分享
+    [KPSharedTool registSharedTool];
+
+    [self.window makeKeyAndVisible];
+    return YES;
+}
+
+- (void)applicationWillResignActive:(UIApplication *)application {
+    
+}
+
+- (void)applicationDidEnterBackground:(UIApplication *)application {
+
+    WHYNSLog(@"注销通知");
+    
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application {
+    
+    
+    
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+    application.applicationIconBadgeNumber -= 1;
+    
+    [self setupNotification];
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application {
+    // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+}
+
+- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
+
+    BOOL sharedRes = [KPSharedTool handleOpenURL:url];
+
+    if (sharedRes == NO) {
+//    支付回调
+        return [KPPayManager handleOpenURL:url];
+    }
+
+    return sharedRes;
+}
+
+#pragma mark - 添加极光推送
+- (void)setupJPushWithOptions:(NSDictionary *)launchOptions
+{
+    
+    [JPUSHService registerForRemoteNotificationTypes:(UIUserNotificationTypeBadge |
+                                                      UIUserNotificationTypeSound |
+                                                      UIUserNotificationTypeAlert)
+                                          categories:nil];
+    //Required
+    // 如需继续使用pushConfig.plist文件声明appKey等配置内容，请依旧使用[JPUSHService setupWithOption:launchOptions]方式初始化。
+    [JPUSHService setupWithOption:launchOptions
+                           appKey:JPUSHAppKey
+                          channel:@"App Store"
+                 apsForProduction:NO
+            advertisingIdentifier:nil];
+}
+
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
+{
+    /// Required - 注册 DeviceToken
+    [JPUSHService registerDeviceToken:deviceToken];
+}
+
+- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo
+{
+    [JPUSHService handleRemoteNotification:userInfo];
+}
+
+- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler
+{
+    NSString *alert = userInfo[@"aps"][@"alert"];
+    WHYNSLog(@"-------notiAlert--------%@", alert);
+    [JPUSHService handleRemoteNotification:userInfo];
+    completionHandler(UIBackgroundFetchResultNewData);
+}
+
+- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
+{
+    //Optional
+    WHYNSLog(@"did Fail To Register For Remote Notifications With Error: %@", error);
+}
+
+#pragma mark - 内存告急时处理
+- (void)applicationDidReceiveMemoryWarning:(UIApplication *)application
+{
+    // 清除所有的内存缓存
+    [[SDImageCache sharedImageCache] clearMemory];
+    
+    // 停止正在进行的图片下载操作
+    [[SDWebImageManager sharedManager] cancelAll];
+}
+
+#pragma mark - 私有方法
+- (void)setupNotification {
+    
+    WHYNSLog(@"注册通知");
+
+}
+
+- (void)startNetworkMonitoring {
+    AFNetworkReachabilityManager * reachabilityManager = [AFNetworkReachabilityManager sharedManager];
+    [reachabilityManager setReachabilityStatusChangeBlock:^(AFNetworkReachabilityStatus status) {
+        switch (status) {
+            case AFNetworkReachabilityStatusUnknown:
+            case AFNetworkReachabilityStatusNotReachable: {
+                [KPNetworkingStatusView showNoNetworkingStatus];
+                break;
+            }
+            case AFNetworkReachabilityStatusReachableViaWWAN:
+            case AFNetworkReachabilityStatusReachableViaWiFi: {
+                [KPNetworkingStatusView hideNoNetworkingStatus];
+                break;
+            }
+        }
+    }];
+    [reachabilityManager startMonitoring];
+}
+
+@end

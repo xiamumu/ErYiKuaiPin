@@ -1,0 +1,499 @@
+//
+//  KPProfileViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/4/25.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+// controller
+#import "KPProfileViewController.h"
+#import <FDFullscreenPopGesture/UINavigationController+FDFullscreenPopGesture.h>
+#import "KPMessageViewController.h"
+#import "KPFootTraceViewController.h"
+#import "KPAccountManageViewController.h"
+#import "KPBaseOrderViewController.h"
+#import "KPPropertyViewController.h"
+#import "KPGoodsCollectionViewController.h"
+#import "KPBeLeftMoneyViewController.h"
+#import "KPBankCardManageController.h"
+#import "KPLikeBrandViewController.h"
+#import "KPLoginRegisterViewController.h"
+// cell
+#import "KPProfileTableViewCell.h"
+#import "KPProfileOtherTableViewCell.h"
+#import "KPProfileFooderCell.h"
+
+// view
+#import "KPProfileHeaderView.h"
+#import "KPProfileItem.h"
+
+// model
+#import "KPProfileItemData.h"
+#import "KPProfileRowData.h"
+#import "KPUploadParam.h"
+#import "KPUserUpdateParam.h"
+#import "KPNavigationController.h"
+
+@interface KPProfileViewController ()<UITableViewDataSource, UITableViewDelegate, UIActionSheetDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate>
+
+@property (nonatomic, weak) UITableView *table;
+@property (nonatomic, strong) NSMutableArray *rowDatas;
+@property (nonatomic, weak) KPProfileHeaderView *headerView;
+
+
+@end
+
+@implementation KPProfileViewController
+
+- (NSMutableArray *)rowDatas
+{
+    if (_rowDatas == nil) {
+        _rowDatas = [NSMutableArray array];
+    }
+    return _rowDatas;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.fd_prefersNavigationBarHidden = YES;
+    self.automaticallyAdjustsScrollViewInsets = NO;
+    
+    // 添加TableView
+    [self setupTableView];
+    
+    // 添加监听
+    [self setupNotification];
+    
+    // 添加数据源
+    [self setupData];
+    
+}
+#pragma mark - 添加数据
+- (void)setupData
+{
+    
+    NSArray *firstRow = @[@"待付款", @"待收货", @"已取消", @"全部订单"];
+    NSArray *secondRow = @[@"零钱", @"消费资产", @"银行卡", @"我的钱包"];
+    NSArray *thirdRow = @[@"快品收藏", @"品牌关注", @"足迹"];
+    
+    KPProfileRowData *firstRowData = [[KPProfileRowData alloc] init];
+    for (int i = 0; i < firstRow.count ; i++) {
+        KPProfileItemData *item = [KPProfileItemData initWithTitle:firstRow[i]];
+        [firstRowData.items addObject:item];
+    }
+    [self.rowDatas addObject:firstRowData];
+    
+    KPProfileRowData *secondRowData = [[KPProfileRowData alloc] init];
+    for (int i = 0; i < secondRow.count ; i++) {
+        KPProfileItemData *item = [KPProfileItemData initWithTitle:secondRow[i]];
+        [secondRowData.items addObject:item];
+    }
+    [self.rowDatas addObject:secondRowData];
+    
+    KPProfileRowData *thirdRowData = [[KPProfileRowData alloc] init];
+    for (int i = 0; i < thirdRow.count ; i++) {
+        KPProfileItemData *item = [KPProfileItemData initWithTitle:thirdRow[i]];
+        [thirdRowData.items addObject:item];
+    }
+    [self.rowDatas addObject:thirdRowData];
+    
+    
+    KPProfileRowData *fouthRowData = [[KPProfileRowData alloc] init];
+    KPProfileItemData *item = [KPProfileItemData initWithTitle:@"4009-921-365"];
+    [fouthRowData.items addObject:item];
+    [self.rowDatas addObject:fouthRowData];
+    
+    
+}
+
+#pragma mark - 添加监听事件
+- (void)setupNotification
+{
+    // 添加每个item点击事件
+    NSAddObserver(profileItemTapAction:, Noti_ProfileItemTapAction)
+    
+    // 修改头像的通知
+    NSAddObserver(changeIconImage:, Noti_ChangeUserIconImage)
+    
+    // 点击账户管理的跳转通知
+    NSAddObserver(accountManagerAction:, Noti_AccountManagerAction)
+    
+    // 点击消息按钮
+    NSAddObserver(messageBtnAction:, Noti_MessageBtnAction)
+    
+    // 点击头像按钮
+    NSAddObserver(userIconImageDidClick:, Noti_UserIconImageDidClick)
+    
+}
+// 点击头像按钮
+- (void)userIconImageDidClick:(NSNotification *)note
+{
+    if (!IsLogin) {
+        KPLoginRegisterViewController *loginVc = [[KPLoginRegisterViewController alloc] init];
+        KPNavigationController *loginNav = [[KPNavigationController alloc] initWithRootViewController:loginVc];
+        [self presentViewController:loginNav animated:YES completion:nil];
+    }
+    else
+    {
+        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:nil delegate:self cancelButtonTitle:@"取消" destructiveButtonTitle:nil otherButtonTitles:@"从相册选取", @"相机拍照", nil];
+        [actionSheet showInView:self.view];
+    }
+}
+// 点击消息按钮
+- (void)messageBtnAction:(NSNotification *)note
+{
+    if (!IsLogin) {
+        KPLoginRegisterViewController *loginVc = [[KPLoginRegisterViewController alloc] init];
+        KPNavigationController *loginNav = [[KPNavigationController alloc] initWithRootViewController:loginVc];
+        [self presentViewController:loginNav animated:YES completion:nil];
+    }
+    else
+    {
+        KPMessageViewController *messageVc = [KPMessageViewController sharedMessageViewController];
+        [self.navigationController pushViewController:messageVc animated:YES];
+    }
+}
+
+// 点击账户管理的跳转通知
+- (void)accountManagerAction:(NSNotification *)note
+{
+    if (!IsLogin) {
+        KPLoginRegisterViewController *loginVc = [[KPLoginRegisterViewController alloc] init];
+        KPNavigationController *loginNav = [[KPNavigationController alloc] initWithRootViewController:loginVc];
+        [self presentViewController:loginNav animated:YES completion:nil];
+    }
+    else
+    {
+        __weak typeof (self) weakSelf = self;
+        KPAccountManageViewController *accountManageVc = [[KPAccountManageViewController alloc] init];
+        accountManageVc.isLogout = ^{
+            WHYNSLog(@"退出");
+            weakSelf.headerView.isLogout = YES;
+            
+        };
+        [self.navigationController pushViewController:accountManageVc animated:YES];
+    }
+    
+}
+// 修改用户头像
+- (void)changeIconImage:(NSNotification *)note
+{
+    UIImage *iconImage = note.object;
+    UIImage *scaleImg = [UIImage OriginImage:iconImage scaleToSize:CGSizeMake(170, 170)];
+    
+    KPUploadParam *param = [KPUploadParam new];
+    param.imgFileName = @"userImg.png";
+    param.imgFilePath = DocumentPathWithFileName(param.imgFileName);
+    param.imgData = UIImagePNGRepresentation(scaleImg);
+    
+    __weak typeof (self) weakSelf = self;
+    
+    if ([param.imgData writeToFile:param.imgFilePath atomically:YES]) {
+        [KPNetworkingTool uploadUserIconWithParam:param success:^(id result) {
+            
+            if ([result[@"code"] integerValue] == 0) {
+                NSString *avatar = [result[@"data"][@"urls"] firstObject];
+                KPUserUpdateParam *param = [KPUserUpdateParam param];
+                param.avatar = avatar;
+                [KPNetworkingTool userUpdateWithParam:param success:^(id subResult) {
+                    WHYNSLog(@"%@", subResult);
+                    
+                    if ([subResult[@"code"] integerValue] == 0) {
+                        
+                        [KPUserManager sharedUserManager].userModel.avatar = avatar;
+                        [KPUserManager updateUser];
+                        [KPProgressHUD showSuccessWithStatus:@"上传头像成功"];
+                        // 更新头像
+                        weakSelf.headerView.icon = scaleImg;
+                        [weakSelf.table reloadData];
+                    }
+                    else
+                    {
+                        [KPProgressHUD showSuccessWithStatus:@"上传头像失败"];
+                    }
+                } failure:^(NSError *error) {
+                    [KPProgressHUD showSuccessWithStatus:@"上传头像失败"];
+                }];
+            }
+            else
+            {
+                [KPProgressHUD showSuccessWithStatus:@"上传头像失败"];
+            }
+        } failure:^(NSError *error) {
+            WHYNSLog(@"%@", error);
+        }];
+    }
+}
+// 每个item点击事件
+- (void)profileItemTapAction:(NSNotification *)note
+{
+    KPProfileItem *item = (KPProfileItem *)note.object;
+    NSString *title = item.title.text;
+    if (!IsLogin) {
+        KPLoginRegisterViewController *loginVc = [[KPLoginRegisterViewController alloc] init];
+        KPNavigationController *loginNav = [[KPNavigationController alloc] initWithRootViewController:loginVc];
+        [self presentViewController:loginNav animated:YES completion:nil];
+    }
+    else
+    {
+        if ([title isEqualToString:@"足迹"]) {
+            KPFootTraceViewController *footTarceVc = [[KPFootTraceViewController alloc] init];
+            footTarceVc.title = title;
+            [self.navigationController pushViewController:footTarceVc animated:YES];
+        }
+        else if ([title isEqualToString:@"快品收藏"]) {
+            KPGoodsCollectionViewController *goodsCollectionVc = [[KPGoodsCollectionViewController alloc] init];
+            goodsCollectionVc.title = title;
+            [self.navigationController pushViewController:goodsCollectionVc animated:YES];
+        }
+        else if ([title isEqualToString:@"品牌关注"]) {
+            KPLikeBrandViewController *likeBrandVc = [[KPLikeBrandViewController alloc] init];
+            likeBrandVc.title = title;
+            [self.navigationController pushViewController:likeBrandVc animated:YES];
+        }
+        else if ([title isEqualToString:@"待付款"])
+        {
+            KPBaseOrderViewController *unPayOrderVc = [[KPBaseOrderViewController alloc] init];
+//            unPayOrderVc.title = title;
+            unPayOrderVc.selectedPageIndex = 0;
+            [self.navigationController pushViewController:unPayOrderVc animated:YES];
+        }
+        else if ([title isEqualToString:@"待收货"])
+        {
+            KPBaseOrderViewController *unRecieveOrderVc = [[KPBaseOrderViewController alloc] init];
+//            unRecieveOrderVc.title = title;
+            unRecieveOrderVc.selectedPageIndex = 1;
+            [self.navigationController pushViewController:unRecieveOrderVc animated:YES];
+        }
+        else if ([title isEqualToString:@"已取消"])
+        {
+            KPBaseOrderViewController *cancelOrderVc = [[KPBaseOrderViewController alloc] init];
+//            cancelOrderVc.title = title;
+            cancelOrderVc.selectedPageIndex = 2;
+            [self.navigationController pushViewController:cancelOrderVc animated:YES];
+        }
+        else if ([title isEqualToString:@"全部订单"])
+        {
+            KPBaseOrderViewController *allOrderVc = [[KPBaseOrderViewController alloc] init];
+//            allOrderVc.title = title;
+            allOrderVc.selectedPageIndex = 4;
+            [self.navigationController pushViewController:allOrderVc animated:YES];
+        }
+        else if ([title isEqualToString:@"零钱"])
+        {
+            KPBeLeftMoneyViewController *beLeftMoneyVc = [[KPBeLeftMoneyViewController alloc] init];
+            beLeftMoneyVc.title = title;
+            [self.navigationController pushViewController:beLeftMoneyVc animated:YES];
+        }
+        else if ([title isEqualToString:@"银行卡"])
+        {
+//            KPBankCardManageController *bankCardVc = [KPBankCardManageController new];
+//            [self.navigationController pushViewController:bankCardVc animated:YES];
+        }
+        else if ([title isEqualToString:@"消费资产"])
+        {
+            KPPropertyViewController *propertyVc = [[KPPropertyViewController alloc] init];
+            propertyVc.title = [NSString stringWithFormat:@"我的%@",title];
+            [self.navigationController pushViewController:propertyVc animated:YES];
+        }
+    }
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    KPStatisticsBeginWithViewName(SelfClassStr)
+
+    if (IsLogin) {
+        KPUserManager *userManager = [KPUserManager sharedUserManager];
+        NSString *nickname = userManager.userModel.nickname;
+        UIImage *icon = userManager.userModel.avatarImg;
+        
+        self.headerView.title = nickname.length > 0 ? nickname : @"二一快品";
+        self.headerView.icon = icon ? icon : [UIImage imageNamed:@"userDefaultAvtor"];
+        [self setupProfileData];
+    }
+    else
+    {
+        self.headerView.title = @"登录/注册";
+        self.headerView.icon = [UIImage imageNamed:@"userDefaultAvtor"];
+        self.headerView.messageBadgeValue = @"0";
+        KPProfileRowData *profileItemData = self.rowDatas.firstObject;
+        for (KPProfileItemData *item in profileItemData.items) {
+            item.badgeValue = @"0";
+        }
+        [self.table reloadData];
+        
+        __weak typeof (self) weakSelf = self;
+        self.headerView.registAndLogin = ^{
+            
+            if (IsLogin) return;
+            KPLoginRegisterViewController *loginVc = [[KPLoginRegisterViewController alloc] init];
+            KPNavigationController *loginNav = [[KPNavigationController alloc] initWithRootViewController:loginVc];
+            [weakSelf presentViewController:loginNav animated:YES completion:nil];
+        };
+    }
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    KPStatisticsEndWithViewName(SelfClassStr)
+}
+
+- (void)setupProfileData
+{
+    KPProfileHeaderView *headerView = (KPProfileHeaderView *)self.table.tableHeaderView;
+    __weak typeof (self) weakSelf = self;
+    [KPNetworkingTool GetProfileData:^(id result) {
+        
+        if (CODE == 0)
+        {
+            KPProfileRowData *profileItemData = weakSelf.rowDatas.firstObject;
+            profileItemData.items[0].badgeValue = [NSString stringWithFormat:@"%@", result[@"data"][@"unPayOrderNum"]];
+            profileItemData.items[1].badgeValue = [NSString stringWithFormat:@"%@", result[@"data"][@"unReceiveOrderNum"]];
+            
+            headerView.messageBadgeValue = [NSString stringWithFormat:@"%@", result[@"data"][@"messageNum"]];
+        }
+        else
+        {
+            headerView.messageBadgeValue = @"0";
+        }
+        
+        [weakSelf.table reloadData];
+        
+    } failure:^(NSError *error) {
+        
+        headerView.messageBadgeValue = @"0";
+        
+    }];
+}
+
+#pragma mark - 修改头像 - UIActionSheetDelegate
+- (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if (buttonIndex == actionSheet.cancelButtonIndex) {
+    }
+    else if (buttonIndex == 0)
+    { // 从相册选择
+        UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+        picker.delegate = self;
+        picker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
+        picker.allowsEditing = YES;
+        [self presentViewController:picker animated:YES completion:nil];
+    }
+    else
+    { // 调取相机
+        if ([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]) {
+            
+            UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+            picker.delegate = self;
+            picker.sourceType = UIImagePickerControllerSourceTypeCamera;
+            picker.allowsEditing = YES;
+            [self presentViewController:picker animated:YES completion:nil];
+        }
+    }
+}
+
+#pragma mark - UIImagePickerControllerDelegate
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<NSString *,id> *)info
+{
+    UIImage *iconImage = info[UIImagePickerControllerEditedImage];
+    [KPUserManager sharedUserManager].userModel.avatarImg = iconImage;
+    [KPUserManager updateUser];
+    NSNotification *note = [NSNotification notificationWithName:Noti_ChangeUserIconImage object:iconImage];
+    [self changeIconImage:note];
+    [picker dismissViewControllerAnimated:YES completion:nil];
+}
+#pragma mark - UITableViewDelegate, UITableViewDataSource
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return self.rowDatas.count;
+}
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return 1;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if (indexPath.section < 2) {
+        KPProfileTableViewCell *cell = [KPProfileTableViewCell cellWithTable:tableView];
+        cell.rowData = self.rowDatas[indexPath.section];
+        cell.section = indexPath.section;
+        return cell;
+    }
+    else if (indexPath.section == 2)
+    {
+        KPProfileOtherTableViewCell *cell = [KPProfileOtherTableViewCell cellWithTable:tableView];
+        cell.rowData = self.rowDatas[indexPath.section];
+        return cell;
+    }
+    else if (indexPath.section == 3)
+    {
+        KPProfileFooderCell *cell = [KPProfileFooderCell cellWithTable:tableView handler:^{
+            
+            [KPAlertController alertActionSheetControllerWithTitle:@"拨号"
+                                                      cancelTitle:@"取消"
+                                                      defaultTitle:@"400-9921-365"
+                                                          handler:^(UIAlertAction *action) {
+                                                              [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tel://4009-921-365"]];
+                                                          }];
+            
+        }];
+        return cell;
+    }
+    return [[UITableViewCell alloc] init];
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+{
+    if (section == 0) {
+        return 0;
+    }
+    return 5;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
+{
+    return 0.001;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if (indexPath.section < 2 || indexPath.section == 3) {
+        return 75;
+    }
+    return 116;
+}
+
+- (UIStatusBarStyle)preferredStatusBarStyle
+{
+    return UIStatusBarStyleLightContent;
+}
+
+#pragma mark - setupUI
+- (void)setupTableView
+{
+    UITableView *table = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, SCREEN_W, SCREEN_H - 49) style:UITableViewStyleGrouped];
+    table.delegate = self;
+    table.dataSource = self;
+    table.tableFooterView = [[UIView alloc] init];
+    table.separatorStyle = UITableViewCellSeparatorStyleNone;
+    table.showsVerticalScrollIndicator = NO;
+    [self.view addSubview:table];
+    self.table = table;
+    
+    KPProfileHeaderView *headerView = [[KPProfileHeaderView alloc] init];
+    headerView.width = SCREEN_W;
+    headerView.height = 186;
+    table.tableHeaderView = headerView;
+    self.headerView = headerView;
+    
+}
+
+- (void)dealloc
+{
+    NSRemoveObserver
+}
+@end

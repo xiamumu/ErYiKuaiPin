@@ -1,0 +1,75 @@
+//
+//  KPBankCardViewModel.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/13.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPBankCardViewModel.h"
+#import "KPBankCardCell.h"
+#import "KPBankCardModel.h"
+#import "KPSeparatorSectionHeaderView.h"
+#import "KPSeparatorSectionFooterView.h"
+
+@interface KPBankCardViewModel ()
+
+@property (nonatomic, strong) NSArray<KPBankCardModel *> *cards;
+
+@end
+
+@implementation KPBankCardViewModel
+
+- (void)setData:(id)data {
+    super.data = data;
+    
+    self.cards = [KPBankCardModel mj_objectArrayWithKeyValuesArray:data];
+    
+}
+
+- (NSInteger)deleteBankCardAtIndexPath:(NSIndexPath *)indexPath {
+    return self.cards[indexPath.section].bankCardId.integerValue;
+}
+
+- (NSInteger)numberOfSections {
+    return self.cards.count;
+}
+
+- (NSInteger)numberOfRowsInSection:(NSInteger)section {
+    return 1;
+}
+
+- (UITableViewCell *)cellForRowAtIndexPath:(NSIndexPath *)indexPath tableView:(UITableView *)tableView {
+    
+    KPBankCardCell *cell = [KPBankCardCell cellWithTableView:tableView];
+    cell.model = self.cards[indexPath.section];
+    
+    return cell;
+}
+
+- (CGFloat)heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return [KPBankCardCell cellHeight];
+}
+
+- (UIView *)viewForHeaderInSection:(NSInteger)section tableView:(UITableView *)tableView {
+    return [KPSeparatorSectionHeaderView headerViewWithTableView:tableView];
+}
+
+- (CGFloat)heightForHeaderInSection:(NSInteger)section {
+    return [KPSeparatorSectionHeaderView headerViewHeight];
+}
+
+- (UIView *)viewForFooterInSection:(NSInteger)section tableView:(UITableView *)tableView {
+    return [KPSeparatorSectionFooterView footerViewWithTableView:tableView];
+}
+
+- (CGFloat)heightForFooterInSection:(NSInteger)section {
+    return 1;
+}
+
+#pragma mark - 懒加载
+
+
+singleton_implementation(ViewModel)
+
+@end

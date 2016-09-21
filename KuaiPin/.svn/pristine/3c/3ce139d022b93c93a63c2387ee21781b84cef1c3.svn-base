@@ -1,0 +1,116 @@
+//
+//  KPInviteViewController.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/9/1.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPInviteViewController.h"
+#import "KPActivityWebViewController.h"
+#import "KPSelectAssetsViewController.h"
+
+@interface KPInviteViewController ()
+
+@property (nonatomic, strong) UIImageView *iconView;
+
+@property (nonatomic, strong) KPButton *lookUpRuleBtn;
+
+@property (nonatomic, strong) KPButton *selectAssetsBtn;
+
+@end
+
+@implementation KPInviteViewController
+
+#pragma mark - 点击事件
+- (void)clickSelectAssetsButton {
+
+    KPSelectAssetsViewController *assetsVc = [KPSelectAssetsViewController new];
+    [self.navigationController pushViewController:assetsVc animated:YES];
+
+}
+
+- (void)clickLookUpRuleButton {
+
+    KPActivityWebViewController *webViewVc = [KPActivityWebViewController new];
+    webViewVc.urlStr = @"http://21kp.21my.com/invite/reward.html";
+    webViewVc.title = @"奖励规则";
+    webViewVc.jsStrs = @[@"document.getElementsByTagName('h1')[0].remove();"];
+    [self.navigationController pushViewController:webViewVc animated:YES];
+
+}
+
+#pragma mark - 控制器生命周期
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self setupUI];
+
+    self.navigationItem.title = @"邀请有奖";
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark - 私有方法
+- (void)setupUI {
+
+    self.view.backgroundColor = WhiteColor;
+
+    [self.view addSubview:self.iconView];
+    [self.view addSubview:self.lookUpRuleBtn];
+    [self.view addSubview:self.selectAssetsBtn];
+
+    __weak typeof(self) weakSelf = self;
+
+    [self.iconView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.mas_equalTo(weakSelf.view);
+    }];
+
+    CGFloat ruleTop = SCREEN_H * 0.8;
+    [self.lookUpRuleBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.iconView).offset(ruleTop);
+        make.centerX.mas_equalTo(weakSelf.view);
+    }];
+
+    CGFloat btnH = 50;
+    [self.selectAssetsBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.bottom.mas_equalTo(weakSelf.view);
+        make.height.mas_equalTo(btnH);
+    }];
+
+}
+
+#pragma mark - 懒加载
+- (UIImageView *)iconView {
+    if (_iconView == nil) {
+        _iconView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"invite"]];
+    }
+    return _iconView;
+}
+
+- (KPButton *)lookUpRuleBtn {
+    if (_lookUpRuleBtn == nil) {
+        _lookUpRuleBtn = [KPButton new];
+        _lookUpRuleBtn.titleLabel.font = UIFont_18;
+        [_lookUpRuleBtn setTitle:@"查看规则 ＞" forState:UIControlStateNormal];
+        [_lookUpRuleBtn setTitleColor:GrayColor forState:UIControlStateNormal];
+        [_lookUpRuleBtn addTarget:self action:@selector(clickLookUpRuleButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _lookUpRuleBtn;
+}
+
+- (KPButton *)selectAssetsBtn {
+    if (_selectAssetsBtn == nil) {
+        _selectAssetsBtn = [KPButton new];
+        _selectAssetsBtn.backgroundColor = OrangeColor;
+        _selectAssetsBtn.titleLabel.font = UIFont_18;
+        [_selectAssetsBtn setTitle:@"选择消费资产" forState:UIControlStateNormal];
+        [_selectAssetsBtn setTitleColor:WhiteColor forState:UIControlStateNormal];
+        [_selectAssetsBtn addTarget:self action:@selector(clickSelectAssetsButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _selectAssetsBtn;
+}
+
+@end

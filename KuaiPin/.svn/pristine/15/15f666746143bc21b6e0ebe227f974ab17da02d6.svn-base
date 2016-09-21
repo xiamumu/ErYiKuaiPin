@@ -1,0 +1,83 @@
+//
+//  KPSingParamView.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/8/31.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPSingParamView.h"
+#import "KPTagButton.h"
+
+@interface KPSingParamView ()
+
+@property (nonatomic, weak) UILabel *titleLab;
+
+@property (nonatomic, strong) NSArray *names;
+
+@end
+@implementation KPSingParamView
+
+- (NSArray *)names
+{
+    if (_names == nil) {
+        _names = @[@"粉红红红红色", @"粉红红色", @"粉红红红色", @"黑色", @"粉红红色粉红色", @"粉红红色粉红色", @"粉红红色粉红色", @"粉红色", @"粉红色", @"黑色", @"粉红色粉红色粉红色", @"黑色", @"粉红红色红红红红红粉红色", @"色", @"粉红色", @"黑色", @"粉红色粉红色粉红色"];
+    }
+    return _names;
+}
+
++ (instancetype)singParamView
+{
+    return [[self alloc] init];
+}
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        
+        self.width = SCREEN_W;
+        
+        UILabel *titleLab = [UILabel addLabelWithTitle:@"颜色" textColor:HexColor(8a8a8a) font:UIFont_15];
+        titleLab.frame = CGRectMake(12, 16, SCREEN_W - 24, 16);
+        [self addSubview:titleLab];
+        self.titleLab = titleLab;
+        
+        
+        CGFloat left_right_margin = 12;
+        CGFloat mid_margin = 15;
+        CGFloat tagBtn_X = left_right_margin;
+        CGFloat tagBtn_Y = 50;
+        CGFloat tagBtnMax_Y = 0;
+        
+        for (int i = 0; i < self.names.count ; i++) {
+            KPTagButton *tagBtn = [KPTagButton new];
+            tagBtn.title = self.names[i];
+            tagBtn.selected = YES;
+            [self addSubview:tagBtn];
+            
+            CGFloat tagBtn_W = tagBtn.width;
+            if ((tagBtn_X + tagBtn_W  + left_right_margin) > SCREEN_W) {
+                tagBtn_Y = tagBtnMax_Y + mid_margin;
+                tagBtn_X = left_right_margin;
+            }
+            
+            tagBtn.x = tagBtn_X;
+            tagBtn.y = tagBtn_Y;
+            
+            tagBtnMax_Y = CGRectGetMaxY(tagBtn.frame);
+            tagBtn_X = CGRectGetMaxX(tagBtn.frame) + mid_margin;
+            
+            self.height = CGRectGetMaxY(tagBtn.frame) + mid_margin * 2;
+        }
+    }
+    return self;
+}
+
+- (void)setTitle:(NSString *)title
+{
+    _title = [title copy];
+    self.titleLab.text = title;
+}
+
+@end

@@ -1,0 +1,200 @@
+//
+//  KPPayBackDetailViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/11.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPPayBackDetailViewController.h"
+#import "KPPayBackDetailCell.h"
+#import "KPPayBackOrderDetail.h"
+#import "KPPayBackDetailHeaderView.h"
+#import "KPOrderDetailParam.h"
+#import "KPPayBackOrderDetail.h"
+#import "KPOrderItem.h"
+#import "KPAlertController.h"
+#import "KPApplyForPayBackParam.h"
+
+
+@interface KPPayBackDetailViewController ()<UITableViewDataSource, UITableViewDelegate>
+
+@property (nonatomic, weak) UITableView *table;
+@property (nonatomic, strong) KPPayBackOrderDetail *orderDetail;
+@property (nonatomic, weak) KPButton *payBackBtn;
+
+@end
+
+@implementation KPPayBackDetailViewController
+
+#pragma mark - 懒加载
+- (KPPayBackOrderDetail *)orderDetail
+{
+    if (_orderDetail == nil) {
+        _orderDetail = [[KPPayBackOrderDetail alloc] init];
+    }
+    return _orderDetail;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = BaseColor;
+    self.title = @"贴现详情";
+    
+    // 设置UI
+    [self setupTableView];
+    
+    // 请求数据
+    [self setupData];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    KPStatisticsBeginWithViewName(SelfClassStr)
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    KPStatisticsEndWithViewName(SelfClassStr)
+}
+
+- (void)setupData
+{
+    __weak typeof (self) weakSelf = self;
+    KPOrderDetailParam *param = [KPOrderDetailParam param];
+    param.orderSn = self.orderSn;
+    [KPNetworkingTool orderDetailWithParam:param success:^(id result) {
+        
+//        NSLog(@"%@", result);
+        
+        if (CODE != 0) return;
+        
+        weakSelf.orderDetail = [KPPayBackOrderDetail mj_objectWithKeyValues:result[@"data"][@"order"]];
+    
+        if (weakSelf.orderDetail.payBackBeginTime.length == 0) {
+            
+            [weakSelf.payBackBtn setTitle:@"资产已冻结" forState:UIControlStateNormal];
+            
+        } else if (weakSelf.orderDetail.payBackTime.length != 0 && weakSelf.orderDetail.isDiscount.integerValue == 1) {
+            
+            NSTimeInterval dateInterval = [NSDate date].timeIntervalSince1970 * 1000;
+            
+            if (dateInterval >= weakSelf.orderDetail.payBackTime.doubleValue) {
+            
+            weakSelf.payBackBtn.backgroundColor = OrangeColor;
+            [weakSelf.payBackBtn setTitle:@"申请贴现" forState:UIControlStateNormal];
+            [weakSelf.payBackBtn addTarget:self action:@selector(payBackBtnAction) forControlEvents:UIControlEventTouchUpInside];
+            
+            }
+        } else if (weakSelf.orderDetail.payBackTime.length != 0 && weakSelf.orderDetail.isDiscount.integerValue == 2) {
+            
+            weakSelf.payBackBtn.backgroundColor = GrayColor;
+            [weakSelf.payBackBtn setTitle:@"待审核" forState:UIControlStateNormal];
+            
+        } else if (weakSelf.orderDetail.payBackTime.length != 0 && weakSelf.orderDetail.isDiscount.integerValue == 3) {
+            weakSelf.payBackBtn.hidden = YES;
+        }
+
+        weakSelf.payBackBtn.hidden = weakSelf.orderDetail.isDiscount.integerValue == 3 ? YES : NO;
+        
+        
+        [weakSelf.table reloadData];
+        
+    } failure:^(NSError *error) {
+        
+    }];
+}
+#pragma mark - setupUI
+- (void)setupTableView
+{
+    self.automaticallyAdjustsScrollViewInsets = NO;
+    UITableView *table = [[UITableView alloc] initWithFrame:CGRectMake(0, 64, SCREEN_W, SCREEN_H - 49 - 64) style:UITableViewStyleGrouped];
+    table.delegate = self;
+    table.dataSource = self;
+    table.backgroundColor = BaseColor;
+    table.tableFooterView = [[UIView alloc] init];
+    table.showsVerticalScrollIndicator = NO;
+    table.separatorStyle = UITableViewCellSeparatorStyleNone;
+    table.rowHeight = 80;
+    [self.view addSubview:table];
+    self.table = table;
+    
+    KPButton *payBackBtn = [[KPButton alloc] initWithFrame:CGRectMake(0, SCREEN_H - 49, SCREEN_W, 49)];
+    payBackBtn.backgroundColor = [UIColor lightGrayColor];
+    [payBackBtn setTitle:@"申请贴现" forState:UIControlStateNormal];
+    payBackBtn.titleLabel.font = UIFont_18;
+    [self.view addSubview:payBackBtn];
+    self.payBackBtn = payBackBtn;
+}
+
+- (void)payBackBtnAction
+{
+    KPApplyForPayBackParam *param = [KPApplyForPayBackParam param];
+    param.orderSn = self.orderSn;
+    
+    __weak typeof (self) weakSelf = self;
+    [KPNetworkingTool ApplyForPayBackWithParam:param success:^(id result) {
+        
+//        NSLog(@"-=-=-=-=-=-=-=-=%@", result);
+        if (CODE == 0) {
+            
+            NSString *message = @"您的资产已申请成功，我们会在两个工作日内转入您的余额。逾期未到，请联系客服。";
+           
+            [KPAlertController alertControllerWithTitle:@"提交结果" message:message cancelTitle:nil defaultTitle:@"确定" handler:^(UIAlertAction *action) {
+                
+                weakSelf.payBackBtn.backgroundColor = GrayColor;
+                weakSelf.payBackBtn.enabled = YES;
+                [weakSelf.payBackBtn setTitle:@"待审核" forState:UIControlStateNormal];
+                
+                NSPostNote(Noti_RefreshOrders, nil)
+                
+                [weakSelf setupData];
+            }];
+        }
+        
+    } failure:^(NSError *error) { }];
+    
+}
+#pragma mark - UITableViewDelegate, UITableViewDataSource
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 1;
+}
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return self.orderDetail.orderItems.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    KPPayBackDetailCell *cell = [KPPayBackDetailCell cellWithTable:tableView];
+    cell.orderItem = self.orderDetail.orderItems[indexPath.row];
+    return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+{
+    CGFloat startH = 0.0;
+    switch (self.orderDetail.isDiscount.intValue) {
+        case 0:
+        case 1:
+            startH = 430;
+            break;
+        default:
+            startH = 285;
+            break;
+    }
+    CGFloat height = iPhone5? ScaleHeight(startH) + CommonMargin: ScaleHeight(startH);
+    
+    return height;
+}
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
+{
+    KPPayBackDetailHeaderView *headerView = [[KPPayBackDetailHeaderView alloc] init];
+    headerView.payBackOrderDetail = self.orderDetail;
+    return headerView;
+}
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
+{
+    return 0.001;
+}
+@end

@@ -1,0 +1,560 @@
+//
+//  KPShopViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/6.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+// controller
+#import "KPShopViewController.h"
+#import "KPSubsidizeViewController.h"
+#import "KPLoginRegisterViewController.h"
+#import "KPGoodsDetailViewController.h"
+
+// view
+#import "KPShopHeaderView.h"
+#import "KPSortBar.h"
+#import "UIBarButtonItem+XM.h"
+#import "KPShopTableViewCell.h"
+#import "KPCommonItem.h"
+#import "XMSearchBar.h"
+#import "KPSubsidizeButton.h"
+
+// model
+#import "KPShopDetailParam.h"
+#import "KPShopNewGoosParam.h"
+#import "KPCollectStoreParam.h"
+#import "KPShopDataResult.h"
+#import "KPBrand.h"
+#import "KPProduct.h"
+#import "KPUpdateSubsidizeParam.h"
+#import "KPGoodsListViewController.h"
+#import "KPNavigationController.h"
+#import "KPDIYFooterRefresh.h"
+
+typedef enum : NSUInteger {
+    KPShopDataTpyeDefault,
+    KPShopDataTpyeNew,
+} KPShopDataTpye;
+
+@interface KPShopViewController ()<UITableViewDataSource, UITableViewDelegate, KPSortBarDelegate>
+
+@property (nonatomic, weak) UITableView *table;
+@property (nonatomic, strong) KPShopDataResult *shopData;
+@property (nonatomic, weak) KPShopHeaderView *headerView;
+@property (nonatomic, weak) KPSubsidizeButton *subsidizeBtn;
+@property (nonatomic, weak) KPButton *topBtn;
+
+@property (nonatomic, strong) NSMutableArray *products;
+
+
+/***  获取默认商品还是获取新上架商品 */
+@property (nonatomic, assign) KPShopDataTpye shopDataTpye;
+
+/***  加载商品的页码 */
+@property (nonatomic, assign) NSUInteger pageNumber;
+
+@end
+
+@implementation KPShopViewController
+
++(instancetype)shopViewControllerWithStoreId:(NSNumber *)storeId {
+    KPShopViewController *shopVc = [KPShopViewController new];
+    shopVc.brand = [KPBrand new];
+    shopVc.brand.storeId = storeId;
+    return shopVc;
+}
+
+- (NSMutableArray *)products
+{
+    if (_products == nil) {
+        _products = [NSMutableArray array];
+    }
+    return _products;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    self.automaticallyAdjustsScrollViewInsets = NO;
+    self.title = @"品牌商家";
+    self.view.backgroundColor = WhiteColor;
+    
+    self.pageNumber = 1;
+    
+    // 添加table
+    [self setupTable];
+    
+    // 添加OtherUI
+    [self setupOtherUI];
+    
+    // 添加NavigationBar
+    [self setupNavigationBar];
+}
+
+#pragma mark - setupNotification
+- (void)setupNotification
+{
+    // 查看商品详情
+    NSAddObserver(checkShopGoodsDetail:, Noti_CheckShopGoodsDetail)
+    
+}
+// 将商品加入购物车
+- (void)addGoodsToSubsidize:(NSNotification *)note
+{
+    if (!IsLogin)
+    {
+        KPLoginRegisterViewController *logVc = [[KPLoginRegisterViewController alloc] init];
+        KPNavigationController *nav = [[KPNavigationController alloc] initWithRootViewController:logVc];
+        [self presentViewController:nav animated:YES completion:nil];
+    }
+    else
+    {
+        KPProduct *product = note.userInfo[@"product"];
+        KPButton *addBtn = note.userInfo[@"addBtn"];
+        
+        if (addBtn.selected == YES) { // 取消加入购物车
+            KPUpdateSubsidizeParam *parm = [KPUpdateSubsidizeParam param];
+            parm.productId = product.productId;
+            parm.amount = @"0";
+            [KPNetworkingTool cartUpdateWithParam:parm success:^(id result) {
+                
+                if (CODE != 0) return;
+                [KPProgressHUD showSuccessWithStatus:@"商品已取消加入购物车"];
+                addBtn.selected = NO;
+                // 获取购物车商品数量
+                [self setupSubsidizeCount];
+                
+            } failure:^(NSError *error) {
+                
+                [KPProgressHUD showSuccessWithStatus:@"取消加入购物车失败,请重新尝试"];
+            }];
+        }
+        else // 加入购物车
+        {
+            KPUpdateSubsidizeParam *parm = [KPUpdateSubsidizeParam param];
+            parm.productId = product.productId;
+            
+            [KPNetworkingTool cartUpdateWithParam:parm success:^(id result) {
+                
+                if (CODE != 0) return;
+                
+                [KPProgressHUD showSuccessWithStatus:@"添加购物车成功"];
+                addBtn.selected = YES;
+                // 获取购物车商品数量
+                [self setupSubsidizeCount];
+                
+            } failure:^(NSError *error) {
+                
+                [KPProgressHUD showSuccessWithStatus:@"添加购物车失败,请重新尝试"];
+            }];
+        }
+        
+    }
+}
+// 查看商品详情
+- (void)checkShopGoodsDetail:(NSNotification *)note
+{
+    KPProduct *product = (KPProduct *)note.object;
+    KPGoodsDetailViewController *goodsDetailVc = [[KPGoodsDetailViewController alloc] init];
+    goodsDetailVc.product = product;
+    [self.navigationController pushViewController:goodsDetailVc animated:YES];
+}
+// 搜索商品
+- (void)seacrchGoodsAction:(NSNotification *)note {
+
+    if (!note.object) return;
+
+    KPGoodsListViewController *goodsListVc = [KPGoodsListViewController new];
+    goodsListVc.keyword = note.object;
+    goodsListVc.storeId = [NSString stringWithFormat:@"%@", self.brand.storeId];
+    [self.navigationController pushViewController:goodsListVc animated:YES];
+    
+}
+
+#pragma mark - setupData
+- (void)setupData
+{
+    self.shopDataTpye = KPShopDataTpyeDefault;
+    KPShopDetailParam *param = [KPShopDetailParam param];
+    param.storeId = self.brand.storeId;
+    param.pageNumber = self.pageNumber;
+    
+    __weak typeof (self) weakSelf = self;
+    [KPNetworkingTool shopDataWithParam:param success:^(id result) {
+        
+//        WHYNSLog(@"-------%@--------", result);
+        if (CODE != 0) { NSLog(@"店铺详情请求数据失败 message == %@", result[@"message"]); return; }
+        
+        
+        if (weakSelf.pageNumber == 1) {
+            
+            weakSelf.shopData = [KPShopDataResult mj_objectWithKeyValues:result[@"data"][@"store"]];
+            weakSelf.headerView.shopData = weakSelf.shopData;
+            weakSelf.products = weakSelf.shopData.products;
+            if (weakSelf.products.count == 0) {
+                
+                weakSelf.table.mj_footer.hidden = YES;
+                
+            } else {
+                weakSelf.table.mj_footer.hidden = NO;
+            }
+            
+        } else {
+            
+            weakSelf.shopData = [KPShopDataResult mj_objectWithKeyValues:result[@"data"][@"store"]];
+            weakSelf.headerView.shopData = weakSelf.shopData;
+            NSMutableArray *newProducts = weakSelf.shopData.products;
+            if (newProducts.count == 0) {
+                
+                weakSelf.table.mj_footer.hidden = YES;
+            } else {
+                [weakSelf.products addObjectsFromArray:newProducts];
+                weakSelf.table.mj_footer.hidden = NO;
+            }
+        }
+        
+        [weakSelf.table reloadData];
+        
+    } failure:^(NSError *error) {
+        WHYNSLog(@"-------%@--------", error);
+    }];
+}
+
+- (void)setupSubsidizeCount
+{    __weak typeof (self) weakSelf = self;
+    [KPNetworkingTool getCarItemCountSuccess:^(id result) {
+        
+        if (CODE != 0) return;
+        
+        NSString *bageValue = [NSString stringWithFormat:@"%@", result[@"data"][@"cartItemCount"]];
+        
+        weakSelf.subsidizeBtn.badgeValue = bageValue;
+        
+        UIViewController *tabBarVc = [UIApplication sharedApplication].keyWindow.rootViewController;
+        UINavigationController *vc = tabBarVc.childViewControllers[3];
+        
+        if ([bageValue isEqualToString:@"0"]) {
+            vc.tabBarItem.badgeValue = nil;
+        } else {
+            vc.tabBarItem.badgeValue = bageValue;
+        }
+        
+    } failure:^(NSError *error) { }];
+}
+
+
+
+#pragma mark - setupUI
+- (void)setupTable
+{
+    CGFloat top = Absolute_Y ? 0 : 64;
+    UITableView *table = [[UITableView alloc] initWithFrame:CGRectMake(0, top, SCREEN_W, SCREEN_H - top)
+                                                      style:UITableViewStylePlain];
+    table.delegate = self;
+    table.dataSource = self;
+    table.showsVerticalScrollIndicator = NO;
+    table.separatorStyle = UITableViewCellSeparatorStyleNone;
+    table.tableFooterView = [[UIView alloc] init];
+    table.backgroundColor = WhiteColor;
+    [self.view addSubview:table];
+    self.table = table;
+    
+    
+    table.mj_header = [MJRefreshNormalHeader headerWithRefreshingTarget:self refreshingAction:@selector(refeshHeaderAction)];
+    table.mj_footer = [KPDIYFooterRefresh footerWithRefreshingTarget:self refreshingAction:@selector(refreshFooderAction)];
+    table.mj_footer.automaticallyHidden = YES;
+    
+    KPShopHeaderView *headerView = [[KPShopHeaderView alloc] init];
+    headerView.width = SCREEN_W;
+    headerView.height = 104;
+    
+    __weak typeof (self) weakSelf = self;
+    [headerView setCollectStore:^(KPButton *collectBtn) {
+        // 收藏店铺
+        [weakSelf collectStoreWithCollectBtn:collectBtn];
+    }];
+    
+    [headerView setShareAction:^(KPButton *shareBtn) {
+        
+    }];
+    
+    table.tableHeaderView = headerView;
+    self.headerView = headerView;
+}
+
+// 下拉刷新
+- (void)refeshHeaderAction
+{
+    self.pageNumber = 1;
+    
+    switch (self.shopDataTpye) {
+        case KPShopDataTpyeDefault: // 默认
+            [self setupData];
+            break;
+        case KPShopDataTpyeNew: // 上新
+//            [self setupNewData];
+            break;
+    }
+    [self.table.mj_header endRefreshing];
+}
+
+// 上拉加载
+- (void)refreshFooderAction
+{
+    
+    self.pageNumber ++;
+    
+    switch (self.shopDataTpye) {
+        case KPShopDataTpyeDefault: // 默认
+            [self setupData];
+            break;
+        case KPShopDataTpyeNew: // 上新
+//            [self setupNewData];
+            break;
+    }
+    
+    [self.table.mj_footer endRefreshing];
+}
+// 收藏店铺
+- (void)collectStoreWithCollectBtn:(KPButton *)collectBtn
+{
+    if (!IsLogin) {
+        KPLoginRegisterViewController *logVc = [[KPLoginRegisterViewController alloc] init];
+        KPNavigationController *nav = [[KPNavigationController alloc] initWithRootViewController:logVc];
+        [self presentViewController:nav animated:YES completion:nil];
+    }
+    else
+    {
+        KPCollectStoreParam *param = [[KPCollectStoreParam alloc] init];
+        param.storeId = self.brand.storeId;
+        [KPNetworkingTool CollectStore:param Success:^(id result) {
+            
+            if (CODE != 0) return;
+            
+            if ([result[@"data"][@"collect"] integerValue] == 1) {
+                
+                [KPProgressHUD showSuccessWithStatus:@"关注成功"];
+                collectBtn.selected = YES;
+            }
+            else
+            {
+                [KPProgressHUD showSuccessWithStatus:@"取消关注"];
+                collectBtn.selected = NO;
+            }
+            
+            [self setupData];
+            
+        } failure:^(NSError *error) { WHYNSLog(@"-------商店关注失败%@", error); }];
+    }
+    
+}
+
+
+#pragma mark - 添加跳转购物车和回滚按钮效果
+- (void)setupOtherUI
+{
+    // 添加滚回按钮和购物车按钮
+    KPButton *topBtn = [[KPButton alloc] init];
+    [topBtn setBackgroundImage:[UIImage imageNamed:@"backtotop"] forState:UIControlStateNormal];
+    [topBtn addTarget:self action:@selector(scrolToTop:) forControlEvents:UIControlEventTouchDown];
+    topBtn.hidden = YES;
+    [self.view addSubview:topBtn];
+    self.topBtn = topBtn;
+    
+    KPSubsidizeButton *subsidizeBtn = [KPSubsidizeButton subsidizeButton];
+    [subsidizeBtn addTarget:self action:@selector(goToSubSize:) forControlEvents:UIControlEventTouchDown];
+    [self.view addSubview:subsidizeBtn];
+    self.subsidizeBtn = subsidizeBtn;
+    
+    __weak __typeof(self) weakSelf = self;
+    [topBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(weakSelf.view).offset(-CommonMargin);
+        make.bottom.mas_equalTo(weakSelf.view).offset(-CommonMargin);
+        make.size.mas_equalTo(weakSelf.topBtn.currentBackgroundImage.size);
+    }];
+    
+    [subsidizeBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.view).offset(CommonMargin);
+        make.bottom.mas_equalTo(weakSelf.view).offset(-CommonMargin);
+        make.size.mas_equalTo(weakSelf.topBtn.currentBackgroundImage.size);
+    }];
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView
+{
+    CGFloat y = scrollView.contentOffset.y;
+    if (y > SCREEN_H) { self.topBtn.hidden = NO; } else  { self.topBtn.hidden = YES; }
+}
+
+- (void)scrolToTop:(KPButton *)topBtn
+{
+    [self.table setContentOffset:CGPointZero animated:YES];
+}
+
+- (void)goToSubSize:(KPButton *)buyBtn
+{
+    if (!IsLogin) {
+        KPLoginRegisterViewController *logVc = [[KPLoginRegisterViewController alloc] init];
+        KPNavigationController *nav = [[KPNavigationController alloc] initWithRootViewController:logVc];
+        [self presentViewController:nav animated:YES completion:nil];
+    }
+    else
+    {
+        KPSubsidizeViewController *subSizeVc = [[KPSubsidizeViewController alloc] init];
+        [self.navigationController pushViewController:subSizeVc animated:YES];
+    }
+}
+
+#pragma mark - 创建navigationBar
+- (void)setupNavigationBar
+{
+    KPCommonItem *serviceBtn = [KPCommonItem initWithTitle:@"联系客服" image:@"kefu" selectImage:nil];
+    serviceBtn.frame = CGRectMake(0, 0, 40, 40);
+    [serviceBtn addTarget:self action:@selector(serviceBtnAction:) forControlEvents:UIControlEventTouchUpInside];
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:serviceBtn];
+    
+    XMSearchBar *searchBar = [XMSearchBar searchBar];
+    searchBar.searchBarType = XMSearchBarTypeShop;
+    searchBar.width = SCREEN_W - 100;
+    searchBar.placeholder = @"搜索本店铺商品";
+    self.navigationItem.titleView = searchBar;
+}
+
+- (void)serviceBtnAction:(KPButton *)serviceBtn
+{
+    
+    [KPAlertController alertActionSheetControllerWithTitle:@"拨号"
+                                               cancelTitle:@"取消"
+                                              defaultTitle:@"400-9921-365"
+                                                   handler:^(UIAlertAction *action) {
+                                                      WHYNSLog(@"拨打人工客服");
+                                                      [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tel://4009-921-365"]];
+                                                   }];
+}
+
+
+#pragma mark - UITableViewDataSource UITableViewDelegate
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return 1;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    KPShopTableViewCell *cell = [KPShopTableViewCell cellWithTable:tableView];
+    cell.products = self.products;
+    return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    CGFloat rows = ceilf(self.products.count * 0.5);
+    
+    CGFloat rowHeight = ScaleHeight(284) + 10;
+    
+    CGFloat height = rowHeight * rows;
+
+    if (height == 0) return 0;
+    
+    return height  + 18;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+{
+    return 38;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
+{
+    KPSortBar *sortBar = [[KPSortBar alloc] init];
+    sortBar.delegate = self;
+    sortBar.width = SCREEN_W;
+    sortBar.height = 41;
+    return sortBar;
+}
+
+#pragma mark - KPSortBarDelegate
+// 按价格排序
+- (void)SortBar:(KPSortBar *)sortBar didSelectedPriceBtn:(KPButton *)priceBtn otherBtnSalesBtn:(KPButton *)salesBtn andHotBtn:(KPButton *)hotBtn
+{
+    
+    self.pageNumber = 1;
+    if (priceBtn.selected == NO) {
+//        [self accordingPriceDesc];
+        [priceBtn setImage:[UIImage imageNamed:@"home_sort_down"] forState:UIControlStateNormal];
+        priceBtn.selected = YES;
+    } else {
+//        [self accordingPriceAsc];
+        [priceBtn setImage:[UIImage imageNamed:@"home_sort_up"] forState:UIControlStateNormal];
+        priceBtn.selected = NO;
+    }
+    
+    [priceBtn setTitleColor:OrangeColor forState:UIControlStateNormal];
+    [salesBtn setTitleColor:BlackColor forState:UIControlStateNormal];
+    [hotBtn setTitleColor:BlackColor forState:UIControlStateNormal];
+    salesBtn.selected = NO;
+    hotBtn.selected = NO;
+    
+    // 滚到顶部
+    [self.table scrollsToTop];
+    // 消除没有更多数据的状态
+    [self.table.mj_footer resetNoMoreData];
+}
+
+// 按销量排序
+- (void)SortBar:(KPSortBar *)sortBar didSelectedSalesBtn:(KPButton *)salesBtn otherBtnPriceBtn:(KPButton *)priceBtn andHotBtn:(KPButton *)hotBtn
+{
+    
+}
+
+// 按热度排序
+- (void)SortBar:(KPSortBar *)sortBar didSelectedHotBtn:(KPButton *)hotBtn otherBtnPriceBtn:(KPButton *)priceBtn andSalesBtn:(KPButton *)salesBtn
+{
+    
+}
+
+#pragma mark - 生命周期
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    
+    self.navigationController.navigationBar.hidden = NO;
+    
+    KPStatisticsBeginWithViewName(SelfClassStr)
+
+    CGFloat top = Absolute_Y ? 0 : 64;
+    self.table.frame = CGRectMake(0, top, SCREEN_W, SCREEN_H - top);
+    
+    // 获取购物车商品数量
+    [self setupSubsidizeCount];
+    
+    // 重新获取数据一次数据  为了刷新商品是否被加入购物车
+    [self setupData];
+    
+    // 监听通知
+    [self setupNotification];
+    
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    KPStatisticsEndWithViewName(SelfClassStr)
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    // 搜索商品
+    NSAddObserver(seacrchGoodsAction:, Noti_SearchGoods)
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+    NSRemoveObserverWithName(Noti_SearchGoods)
+    
+    NSRemoveObserver
+}
+
+
+@end

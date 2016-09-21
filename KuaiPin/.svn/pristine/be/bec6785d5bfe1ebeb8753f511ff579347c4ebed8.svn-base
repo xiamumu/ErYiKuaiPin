@@ -1,0 +1,612 @@
+//
+//  KPSubsidizeViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/4/25.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPSubsidizeViewController.h"
+#import "UIBarButtonItem+XM.h"
+#import "UINavigationBar+XM.h"
+#import "KPSubsidizeViewModel.h"
+#import "KPSubsidizeBottomTool.h"
+#import "KPOrderCommitViewController.h"
+#import "KPNavigationController.h"
+#import "KPGoodsDetailViewController.h"
+#import "KPUpdateSubsidizeParam.h"
+#import "AppDelegate.h"
+
+#import <FDFullscreenPopGesture/UINavigationController+FDFullscreenPopGesture.h>
+#import <MJRefresh.h>
+#import "KPDeleteSubsidizeParam.h"
+#import "KPGetReceiversParam.h"
+#import "KPAddressListViewController.h"
+#import "KPWithoutAnythingView.h"
+#import "KPGoodsListViewController.h"
+
+
+NSInteger static goodsCount = 0;
+
+BOOL static shouldScrollToBottom = YES;
+
+@interface KPSubsidizeViewController ()<UITableViewDataSource, UITableViewDelegate, KPSubsidizeBottomToolDelegate>
+
+@property (nonatomic, strong) KPSubsidizeViewModel *viewModel;
+
+@property (nonatomic, strong) UITableView *tableView;
+
+@property (nonatomic, strong) KPSubsidizeBottomTool *bottomTool;
+
+@property (nonatomic, strong) UIBarButtonItem *deleteBarButtonItem;
+
+@property (nonatomic, strong) NSArray *orderForm;
+
+@property (nonatomic, assign) BOOL isLoadData;
+
+@property (nonatomic, strong) KPWithoutAnythingView *emptyView;
+
+@end
+
+@implementation KPSubsidizeViewController
+
+#pragma mark - 点击事件
+- (void)deleteBtnAction:(KPButton *)deleteBtn {
+    WHYNSLog(@"删除商品");
+    
+    [self.view endEditing:YES];
+
+    __weak typeof(self) weakSelf = self;
+    [KPAlertController alertControllerWithTitle:@"您真的要删除商品么？" cancelTitle:@"继续购买" defaultTitle:@"狠心删除" handler:^(UIAlertAction *action) {
+        [weakSelf deleteProductWithItemIds:weakSelf.viewModel.deleteCartItemIds];
+    }];
+    
+}
+
+- (void)setupSubsidizeCount
+{
+    if (!IsLogin) return;
+    
+    [KPNetworkingTool getCarItemCountSuccess:^(id result) {
+        
+        if (CODE != 0) return;
+        
+        UIViewController *tabBarVc = [UIApplication sharedApplication].keyWindow.rootViewController;
+        UINavigationController *vc = tabBarVc.childViewControllers[3];
+        
+        NSString *bageValue = [NSString stringWithFormat:@"%@", result[@"data"][@"cartItemCount"]];
+        
+        if ([bageValue isEqualToString:@"0"]) {
+            vc.tabBarItem.badgeValue = nil;
+        } else {
+            vc.tabBarItem.badgeValue = bageValue;
+        }
+        
+    } failure:^(NSError *error) {
+        WHYNSLog(@"%@", error);
+    }];
+}
+
+#pragma mark - KPSubsidizeBottomToolDelegate
+- (void)didBottomToolClickCommitOrderButton:(KPSubsidizeBottomTool *)bottomTool {
+
+    __weak typeof(self) weakSelf = self;
+
+    if (!bottomTool.commitEnable) {
+        [KPProgressHUD showErrorWithStatus:@"您还未选择任何商品"];
+        return;
+    }
+
+    KPGetReceiversParam *param = [KPGetReceiversParam param];
+    param.getDefault = @0;
+
+    [KPNetworkingTool getReceiversWithParam:param success:^(id result) {
+
+        NSInteger code = [result[@"code"] integerValue];
+
+        if (code != 0) {
+            WHYNSLog(@"%zd -- %@", code, result[@"message"]);
+            return;
+        }
+
+        NSArray *receivers = result[@"data"][@"receivers"];
+        if (receivers.count == 0) {
+            [KPAlertController alertControllerWithTitle:@"请设置默认收货地址"
+                                            cancelTitle:@"取消"
+                                           defaultTitle:@"去设置"
+                                                handler:^(UIAlertAction *action) {
+                KPAddressListViewController *addressListVc = [KPAddressListViewController new];
+                [weakSelf.navigationController pushViewController:addressListVc animated:YES];
+            }];
+        }else {
+            KPOrderCommitViewController *orderCommitVc = [KPOrderCommitViewController new];
+            orderCommitVc.dataModels = [weakSelf.viewModel getDataModel];
+            orderCommitVc.totalPrice = weakSelf.bottomTool.price;
+            orderCommitVc.defaultReceiverModel = receivers[0];
+            [weakSelf.navigationController pushViewController:orderCommitVc animated:YES];
+        }
+
+
+    } failure:^(NSError *error) {
+        WHYNSLog(@"%@", error);
+    }];
+
+
+    
+}
+
+#pragma mark - UITableViewDataSource
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+
+    if (!self.isLoadData) return 0;
+
+    goodsCount = [self.viewModel numberOfSections];
+    if (goodsCount && self.viewModel.selectedAllEnable) {
+        self.bottomTool.selectedAllEnable = goodsCount;
+    }
+    return goodsCount;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return [self.viewModel numberOfRowsInSection:section];
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return [self.viewModel cellForRowAtIndexPath:indexPath tableView:tableView];
+}
+
+#pragma mark - UITableViewDelegate
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return [self.viewModel heightForRowAtIndexPath:indexPath];
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return [self.viewModel heightForHeaderInSection:section];
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    return [self.viewModel viewForHeaderInSection:section tableView:tableView];
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+    return [self.viewModel viewForFooterInSection:section tableView:tableView];
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
+    return [self.viewModel heightForFooterInSection:section];
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    [self.view endEditing:YES];
+    
+    KPProduct *product = [self.viewModel getProductWithIndexPath:indexPath];
+    KPGoodsDetailViewController *goodsDetailVc = [KPGoodsDetailViewController new];
+    goodsDetailVc.product = product;
+    [self.navigationController pushViewController:goodsDetailVc animated:YES];
+
+}
+
+- (NSArray<UITableViewRowAction *> *)tableView:(UITableView *)tableView editActionsForRowAtIndexPath:(NSIndexPath *)indexPath {
+
+    __weak typeof(self) weakSelf = self;
+    UITableViewRowAction *action;
+    action = [UITableViewRowAction rowActionWithStyle:UITableViewRowActionStyleDestructive
+                                                title:@"删除"
+                                              handler:^(UITableViewRowAction * _Nonnull action,
+                                                        NSIndexPath * _Nonnull indexPath) {
+                                                  KPProduct *product = [weakSelf.viewModel getProductWithIndexPath:indexPath];
+                                                  NSString *itemIds = [NSString stringWithFormat:@"%@", product.itemId];
+                                                  [weakSelf deleteProductWithItemIds:itemIds];
+                                              }];
+
+    return @[action];
+}
+
+#pragma mark - UIScrollViewDelegate
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    self.emptyView.y = -scrollView.contentOffset.y;
+}
+
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+    shouldScrollToBottom = NO;
+    [self.tableView endEditing:YES];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        shouldScrollToBottom = YES;
+    });
+}
+
+#pragma mark - 控制器生命周期
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [self setupUI];
+    [self setupNavigationBar];
+
+    __weak typeof(self) weakSelf = self;
+    self.tableView.mj_header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+        [weakSelf setupData];
+    }];
+    
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+
+    KPStatisticsBeginWithViewName(SelfClassStr)
+
+    [self setupSubsidizeCount];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+
+    KPStatisticsEndWithViewName(SelfClassStr);
+    self.emptyView.hidden = YES;
+
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+//    self.isLoadData = NO;
+    NSRemoveObserver
+
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    
+    self.navigationController.navigationBar.shadowImage = nil;
+
+    if ([[KPUserManager sharedUserManager].userModel.isLogin boolValue]) {
+        [self setupData];
+    }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if ([KPProgressHUD isShowLoading]) {
+            [KPProgressHUD hideLoading];
+        }
+    });
+
+    [self setupNotification];
+
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    
+    
+}
+
+- (void)dealloc {
+    NSRemoveObserver
+}
+
+#pragma mark - 私有方法
+- (void)setupData {
+
+    __weak typeof(self) weakSelf = self;
+    [KPNetworkingTool cartGetWithSuccess:^(id result) {
+
+        weakSelf.isLoadData = YES;
+
+        [weakSelf.tableView.mj_header endRefreshing];
+
+        NSInteger code = [result[@"code"] integerValue];
+
+        if (code != 0) {
+            WHYNSLog(@"%zd -- %@", code, result[@"message"]);
+            [KPProgressHUD showErrorWithStatus:@"出错了，请稍后再试"];
+            weakSelf.emptyView.hidden = NO;
+            weakSelf.viewModel.data = nil;
+            return;
+        }
+
+        NSDictionary *dataDic = result[@"data"];
+        NSDictionary *cartDic = dataDic[@"cart"];
+
+        weakSelf.viewModel.data = dataDic;
+        weakSelf.emptyView.hidden = cartDic.count;
+        [weakSelf.viewModel removeAllGoodsToOrderForm];
+        weakSelf.navigationItem.rightBarButtonItem.enabled = NO;
+        weakSelf.bottomTool.commitEnable = NO;
+        weakSelf.bottomTool.price = 0.00;
+        weakSelf.bottomTool.selectedAll = NO;
+        weakSelf.bottomTool.selectedAllEnable = weakSelf.viewModel.selectedAllEnable;
+        [weakSelf.tableView reloadData];
+
+    } failure:^(NSError *error) {
+        WHYNSLog(@"%@", error);
+        [weakSelf.tableView.mj_header endRefreshing];
+        weakSelf.emptyView.hidden = NO;
+        weakSelf.viewModel.data = nil;
+        [weakSelf.tableView reloadData];
+    }];
+
+}
+
+- (void)setupUI {
+    
+    self.view.backgroundColor = [UIColor whiteColor];
+    
+    [self.view addSubview:self.tableView];
+    [self.view addSubview:self.bottomTool];
+    
+    __weak typeof(self) weakSelf = self;
+    CGFloat bottomMargin = 49;
+    CGFloat top = 0;
+    if ([weakSelf.navigationController.viewControllers[0] isEqual:weakSelf]) {
+        top = 64;
+    }else {
+        bottomMargin = 0;
+    }
+
+    [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.view);
+        make.left.right.mas_equalTo(weakSelf.view);
+    }];
+    
+    [self.bottomTool mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.mas_equalTo(weakSelf.view);
+        make.top.mas_equalTo(weakSelf.tableView.mas_bottom);
+        make.height.mas_equalTo([KPSubsidizeBottomTool subsidizeBottomToolHeight]);
+        make.bottom.mas_equalTo(weakSelf.view).offset(-bottomMargin);
+    }];
+}
+
+- (void)setupNavigationBar {
+    
+    self.navigationItem.title = @"G库";
+    self.navigationItem.rightBarButtonItem = self.deleteBarButtonItem;
+    self.navigationItem.rightBarButtonItem.enabled = NO;
+    
+}
+
+- (void)setupNotification {
+    NSAddObserver(selectedGoodNotification:, Noti_SelectedGoodBtnAction)
+    NSAddObserver(selectedVendorAllGoods:, Noti_SelectedVendorAllGoodsBtnAction)
+    NSAddObserver(selectedAllGoods:, Noti_SelectedAllGoodsBtnAction)
+    NSAddObserver(changeGoodNumber:, Noti_ChangeGoodNumAction);
+    NSAddObserver(lookUpOtherGood:, Noti_LookUpOtherGood)
+    NSAddObserver(scrollEditingCellToTop:, UIKeyboardWillShowNotification)
+    NSAddObserver(scrollEditingCellToBottom:, UIKeyboardWillHideNotification)
+}
+
+- (void)lookUpOtherGood:(NSNotification *)notification {
+    if (!notification.userInfo) return;
+
+    KPGoodsListViewController *goodsListVc = [KPGoodsListViewController new];
+    goodsListVc.title = notification.userInfo[PcIdNameKey];
+    goodsListVc.pcId = [NSString stringWithFormat:@"%@", notification.userInfo[PcIdKey]];
+    [self.navigationController pushViewController:goodsListVc animated:YES];
+
+}
+
+- (void)selectedGoodNotification:(NSNotification *)notification {
+    
+    [self.view endEditing:YES];
+    
+    if (!notification.object) return;
+
+    if (!notification.userInfo) {
+        return;
+    }
+    
+    if ([notification.userInfo[GoodSelectedStateKey] isEqualToString:GoodSelectedStateSelected]) {
+        self.orderForm = [self.viewModel addGoodToOrderFormWithGoodModel:notification.object];
+    }else {
+        self.orderForm = [self.viewModel removeGoodToOrderFormWithGoodModel:notification.object];
+    }
+    
+    self.bottomTool.selectedAll = self.viewModel.selectedAll;
+    
+}
+
+- (void)selectedVendorAllGoods:(NSNotification *)notification {
+    
+    [self.view endEditing:YES];
+    
+    if (!notification.object) {
+        return;
+    }
+    
+    if (!notification.userInfo) {
+        return;
+    }
+    
+    if ([notification.userInfo[GoodSelectedStateKey] isEqualToString:GoodSelectedStateSelected]) {
+        self.orderForm = [self.viewModel addVendorAllGoodsToOrderFormWithVendorModel:notification.object];
+    }else {
+        self.orderForm = [self.viewModel removeVendorAllGoodsToOrderFormWithVendorModel:notification.object];
+    }
+    
+    self.bottomTool.selectedAll = self.viewModel.selectedAll;
+    
+}
+
+- (void)selectedAllGoods:(NSNotification *)notification {
+    
+    if (!notification.userInfo) {
+        return;
+    }
+    
+    if ([notification.userInfo[GoodSelectedStateKey] isEqualToString:GoodSelectedStateSelected]) {
+        self.orderForm = [self.viewModel addAllGoodsToOrderForm];
+    }else {
+        self.orderForm = [self.viewModel removeAllGoodsToOrderForm];
+    }
+    
+}
+
+- (void)scrollEditingCellToTop:(NSNotification *)notification {
+
+    CGRect keyBoardFrame = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
+
+    CGFloat keyBoardH = 246;
+    if (keyBoardFrame.size.height < keyBoardH) return;
+
+    __weak typeof(self) weakSelf = self;
+    [self.tableView.visibleCells enumerateObjectsUsingBlock:^(__kindof UITableViewCell * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        
+        if (obj.isFirstResponder) {
+            
+            NSIndexPath *indexPath = [weakSelf.tableView indexPathForCell:obj];
+            CGFloat y = obj.y - 64;
+            
+            if (indexPath.section == 0 && indexPath.row < 3) {
+//                WHYNSLog(@"y-----------%f", y);
+                [weakSelf.tableView setContentOffset:CGPointMake(0, y) animated:YES];
+                return;
+            }
+            
+            y = obj.y - keyBoardFrame.origin.y + 100;
+//            WHYNSLog(@"y-----------%f", y);
+            [weakSelf.tableView setContentOffset:CGPointMake(0, y) animated:YES];
+
+        }
+        
+    }];
+    
+}
+
+- (void)scrollEditingCellToBottom:(NSNotification *)notification {
+
+    if (!shouldScrollToBottom) return;
+
+    __weak typeof(self) weakSelf = self;
+    [self.tableView.visibleCells enumerateObjectsUsingBlock:^(__kindof UITableViewCell * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        
+        if (obj.isFirstResponder) {
+            
+            NSIndexPath *indexPath = [weakSelf.tableView indexPathForCell:obj];
+            [weakSelf.tableView scrollToRowAtIndexPath:indexPath atScrollPosition:UITableViewScrollPositionTop animated:YES];
+        }
+        
+    }];
+    
+}
+
+- (void)changeGoodNumber:(NSNotification *)notification {
+    
+    KPUpdateSubsidizeParam *param = [KPUpdateSubsidizeParam param];
+    param.productId = notification.userInfo[GoodIdKey];
+    param.amount = notification.userInfo[GoodNumberKey];
+    WHYNSLog(@"%@", param.amount);
+    
+    __weak typeof(self) weakSelf = self;
+    [KPNetworkingTool cartUpdateWithParam:param success:^(id result) {
+        
+        NSInteger code = [result[@"code"] integerValue];
+        
+        if (code != 0) {
+            WHYNSLog(@"%zd -- %@", code, result[@"message"]);
+            return;
+        }
+        
+        weakSelf.orderForm = [weakSelf.viewModel changeGoodNumerWithGoodModel:notification.object number:param.amount];
+        weakSelf.bottomTool.selectedAll = self.viewModel.selectedAll;
+        
+    } failure:^(NSError *error) {
+        
+        WHYNSLog(@"%@", error);
+        
+    }];
+    
+}
+
+- (void)deleteProductWithItemIds:(NSString *)itemIds {
+
+    __weak typeof(self) weakSelf = self;
+    KPDeleteSubsidizeParam *param = [KPDeleteSubsidizeParam param];
+    param.itemIds = itemIds;
+
+    [KPNetworkingTool cartDeleteWithParam:param success:^(id result) {
+
+        NSInteger code = [result[@"code"] integerValue];
+
+        if (code != 0) {
+            WHYNSLog(@"%zd -- %@", code, result[@"message"]);
+            return;
+        }
+
+        [weakSelf setupSubsidizeCount];
+
+
+        [weakSelf.tableView.mj_header beginRefreshing];
+
+    } failure:^(NSError *error) {
+        WHYNSLog(@"%@", error);
+    }];
+
+}
+
+#pragma mark - 重写set方法
+- (void)setOrderForm:(NSArray *)orderForm {
+    _orderForm = orderForm;
+    
+    self.navigationItem.rightBarButtonItem.enabled = orderForm.count ? YES : NO;
+    self.bottomTool.commitEnable = orderForm.count ? YES : NO;
+    [self.tableView reloadData];
+    
+    self.bottomTool.price = self.viewModel.totalPrice;
+    
+}
+
+#pragma mark - 懒加载
+- (KPSubsidizeViewModel *)viewModel {
+    if (_viewModel == nil) {
+        _viewModel = [KPSubsidizeViewModel sharedViewModel];
+    }
+    return _viewModel;
+}
+
+- (UITableView *)tableView {
+    if (_tableView == nil) {
+        _tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleGrouped];
+        _tableView.delegate = self;
+        _tableView.dataSource = self;
+        _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+        _tableView.backgroundColor = ViewBgColor;
+        _tableView.showsHorizontalScrollIndicator = NO;
+        _tableView.showsVerticalScrollIndicator = NO;
+    }
+    return _tableView;
+}
+
+- (KPSubsidizeBottomTool *)bottomTool {
+    if (_bottomTool == nil) {
+        _bottomTool = [KPSubsidizeBottomTool new];
+        _bottomTool.bottomToolDelegate = self;
+    }
+    return _bottomTool;
+}
+
+- (UIBarButtonItem *)deleteBarButtonItem {
+    if (_deleteBarButtonItem == nil) {
+        
+        UIImage *deleteBtnNormalImg = [UIImage imageNamed:@"cart_delete_normal"];
+        KPButton *deleteBtn = [[KPButton alloc] initWithFrame:CGRectMake(0, 0, deleteBtnNormalImg.size.width, deleteBtnNormalImg.size.height)];
+        [deleteBtn setImage:deleteBtnNormalImg forState:UIControlStateNormal];
+        [deleteBtn setImage:[UIImage imageNamed:@"cart_delete_notclick"] forState:UIControlStateDisabled];
+        [deleteBtn setImage:[UIImage imageNamed:@"cart_delete_click"] forState:UIControlStateHighlighted];
+        [deleteBtn addTarget:self action:@selector(deleteBtnAction:) forControlEvents:UIControlEventTouchUpInside];
+        
+        _deleteBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:deleteBtn];
+    }
+    return _deleteBarButtonItem;
+}
+
+- (KPWithoutAnythingView *)emptyView {
+    if (_emptyView == nil) {
+        _emptyView = [KPWithoutAnythingView new];
+        _emptyView.frame = CGRectMake(0, 0, SCREEN_W, 0);
+        [self.view bringSubviewToFront:_emptyView];
+        _emptyView.message = @"您还没有添加任何商品，请添加您想要购买的商品";
+        [self.view addSubview:_emptyView];
+        _emptyView.hidden = YES;
+    }
+    return _emptyView;
+}
+
+
+@end

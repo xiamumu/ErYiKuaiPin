@@ -1,0 +1,345 @@
+//
+//  KPNewPayPwdViewController.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/7.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPNewPayPwdViewController.h"
+#import "UIBarButtonItem+XM.h"
+#import "KPTextField.h"
+#import "KPBottomButton.h"
+#import "KPChangePayPwdParam.h"
+
+@interface KPNewPayPwdViewController ()<KPTextFieldDelegate>
+
+@property (nonatomic, strong) KPTextField *oldPayPwdTF;
+
+@property (nonatomic, strong) KPTextField *payPwdTF;
+
+@property (nonatomic, strong) KPTextField *repeatPayPwdTF;
+
+@property (nonatomic, strong) KPBottomButton *doneBtn;
+
+@property (nonatomic, strong) UILabel *tipLB;
+
+@end
+
+@implementation KPNewPayPwdViewController
+
+#pragma mark - KPTextFieldDelegate
+- (BOOL)textField:(KPTextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    
+    if (string.length == 0) return YES;
+    
+    if (string.isEmoji) return NO;
+    
+    NSInteger maxLength = 6;
+    
+    if([string isEqualToString:@"\n"]) {
+        //按回车关闭键盘
+        [textField resignFirstResponder];
+        
+        if ([textField isEqual:self.oldPayPwdTF]) {
+            [self.payPwdTF becomeFirstResponder];
+        }else if ([textField isEqual:self.payPwdTF]) {
+            [self.repeatPayPwdTF becomeFirstResponder];
+        }else {
+            [self clickDoneButton];
+        }
+        
+        return NO;
+    } else if(textField.text.length >= maxLength) {
+        //输入的字符个数大于maxLength，则无法继续输入，返回NO表示禁止输入
+        WHYNSLog(@"输入的字符个数大于%zd，忽略输入", maxLength);
+        return NO;
+    } else {
+        return YES;
+    }
+    
+}
+
+#pragma mark - 点击事件
+- (void)forgetPwd {
+    WHYNSLog(@"忘记密码！");
+
+    [KPAlertController alertActionSheetControllerWithTitle:@"请咨询人工客服修改"
+                                               cancelTitle:@"取消"
+                                              defaultTitle:@"400-9921-365"
+                                                   handler:^(UIAlertAction *action) {
+                                                       WHYNSLog(@"拨打人工客服");
+                                                       [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tel://4009-921-365"]];
+                                                   }];
+
+}
+
+- (void)clickDoneButton {
+    
+    if (self.payPwdTF.text.length != 6) {
+        [KPProgressHUD showErrorWithStatus:@"请输入6位新密码"];
+        return;
+    }
+    
+    if ([self.payPwdTF.text isEqualToString:self.oldPayPwdTF.text]) {
+        [KPProgressHUD showErrorWithStatus:@"请输入不同的新密码"];
+        return;
+    }
+    
+    if (![self.payPwdTF.text isEqualToString:self.repeatPayPwdTF.text]) {
+        [KPProgressHUD showErrorWithStatus:@"密码不一致"];
+        return;
+    }
+    
+    KPChangePayPwdParam *param = [KPChangePayPwdParam param];
+    param.nPayPassword = self.payPwdTF.text;
+    
+    if (!self.firstSetupPayPwd) {
+        param.payPassword = self.oldPayPwdTF.text;
+    }
+    
+    if (!self.needOldPayPwd && !self.firstSetupPayPwd) {
+        param.mobileVerify = @"true";
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    [KPNetworkingTool changePayPwdWithParam:param success:^(id result) {
+        
+        NSInteger code = [result[@"code"] integerValue];
+        
+        if (code == 10004) {
+            [KPProgressHUD showErrorWithStatus:@"密码错误"];
+            return;
+        }
+        
+        if (code != 0) {
+            WHYNSLog(@"%zd -- %@", code, result[@"message"]);
+            return;
+        }
+        
+        [KPUserManager sharedUserManager].userModel.hasPayPassword = @(YES);
+        [KPUserManager updateUser];
+        
+        NSString *successStr = weakSelf.firstSetupPayPwd ? @"支付密码设置完成" : @"修改成功";
+        [KPProgressHUD showSuccessWithStatus:successStr completion:^{
+            
+            if (weakSelf.firstSetupPayPwd) {
+                [weakSelf dismissViewControllerAnimated:YES completion:nil];
+            }else {
+                [weakSelf.navigationController popToRootViewControllerAnimated:YES];
+            }
+    
+        }];
+    
+    } failure:^(NSError *error) {
+        WHYNSLog(@"%@", error);
+    }];
+    
+}
+
+- (void)clickCloseButton {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    [self.view endEditing:YES];
+}
+
+#pragma mark - 控制器生命周期
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [self setupUI];
+    [self setupNaigationBar];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    KPStatisticsBeginWithViewName(SelfClassStr)
+    [self.oldPayPwdTF becomeFirstResponder];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    KPStatisticsEndWithViewName(SelfClassStr)
+}
+
+- (void)dealloc {
+    WHYNSLog(@"dealloc");
+    self.doneBtn = nil;
+    self.view = nil;
+}
+
+- (BOOL)willDealloc {
+    return NO;
+}
+
+#pragma mark - 私有方法
+- (void)setupUI {
+    
+    self.view.backgroundColor = ViewBgColor;
+    
+    KPSeparatorView *sepOne = [KPSeparatorView new];
+    KPSeparatorView *sepTwo = [KPSeparatorView new];
+    
+    [self.view addSubview:self.payPwdTF];
+    [self.view addSubview:self.repeatPayPwdTF];
+    [self.view addSubview:self.tipLB];
+    [self.view addSubview:self.doneBtn];
+    [self.view addSubview:sepTwo];
+
+    __weak typeof(self) weakSelf = self;
+    CGFloat topMargin = 89;
+    CGFloat leftRightMargin = 9;
+    CGFloat textFieldH = 59;
+    CGFloat registerTopMargin = 59;
+    CGFloat registerH = 45;
+    CGFloat sepH = 1;
+    CGFloat tipTopMargin = 12;
+    CGSize tipSize = [self.tipLB.text sizeWithAttributes:@{NSFontAttributeName : self.tipLB.font}];
+    
+    if (self.needOldPayPwd) {
+        [self.view addSubview:self.oldPayPwdTF];
+        [self.oldPayPwdTF mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.mas_equalTo(weakSelf.view).offset(topMargin);
+            make.left.right.mas_equalTo(weakSelf.view);
+            make.height.mas_equalTo(textFieldH);
+        }];
+    
+        [self.view addSubview:sepOne];
+        [sepOne mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.mas_equalTo(weakSelf.view).offset(leftRightMargin);
+            make.right.mas_equalTo(weakSelf.view);
+            make.centerY.mas_equalTo(weakSelf.oldPayPwdTF.mas_bottom);
+            make.height.mas_equalTo(sepH);
+        }];
+    }
+    
+    [self.payPwdTF mas_makeConstraints:^(MASConstraintMaker *make) {
+        
+        if (weakSelf.needOldPayPwd) {
+            make.left.right.height.mas_equalTo(weakSelf.oldPayPwdTF);
+            make.top.mas_equalTo(weakSelf.oldPayPwdTF.mas_bottom);
+        }else {
+            make.top.mas_equalTo(weakSelf.view).offset(topMargin);
+            make.left.right.mas_equalTo(weakSelf.view);
+            make.height.mas_equalTo(textFieldH);
+        }
+        
+    }];
+    
+    [sepTwo mas_makeConstraints:^(MASConstraintMaker *make) {
+        
+        if (weakSelf.needOldPayPwd) {
+            make.left.right.height.mas_equalTo(sepOne);
+            make.centerY.mas_equalTo(weakSelf.payPwdTF.mas_bottom);
+        }else {
+            make.left.mas_equalTo(weakSelf.view).offset(leftRightMargin);
+            make.right.mas_equalTo(weakSelf.view);
+            make.centerY.mas_equalTo(weakSelf.payPwdTF.mas_bottom);
+            make.height.mas_equalTo(sepH);
+        }
+        
+    }];
+    
+    [self.repeatPayPwdTF mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.height.mas_equalTo(weakSelf.payPwdTF);
+        make.top.mas_equalTo(weakSelf.payPwdTF.mas_bottom);
+    }];
+    
+    [self.tipLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.repeatPayPwdTF.mas_bottom).offset(tipTopMargin);
+        make.left.mas_equalTo(weakSelf.view).offset(leftRightMargin);
+        make.size.mas_equalTo(tipSize);
+    }];
+    
+    [self.doneBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.repeatPayPwdTF.mas_bottom).offset(registerTopMargin);
+        make.left.mas_equalTo(weakSelf.view).offset(leftRightMargin);
+        make.right.mas_equalTo(weakSelf.view).offset(-leftRightMargin);
+        make.height.mas_equalTo(registerH);
+    }];
+    
+}
+
+- (void)setupNaigationBar {
+    
+    self.navigationItem.title = self.firstSetupPayPwd ? @"设置支付密码" : @"修改支付密码";
+    
+    if (self.firstSetupPayPwd) {
+        self.navigationItem.leftBarButtonItem = [UIBarButtonItem itemWithImageName:@"close"
+                                                                     highImageName:nil
+                                                                 selectedImageName:nil
+                                                                             targe:self
+                                                                            action:@selector(clickCloseButton)];
+    }else {
+        self.navigationItem.rightBarButtonItem = [UIBarButtonItem itemWithTitle:@"忘记密码"
+                                                                     titleColor:OrangeColor
+                                                                hightLightColor:OrangeColor
+                                                                          targe:self
+                                                                         action:@selector(forgetPwd)];
+    }
+    
+    
+    
+}
+
+#pragma mark - 懒加载
+- (KPTextField *)oldPayPwdTF {
+    if (_oldPayPwdTF == nil) {
+        _oldPayPwdTF = [KPTextField textFieldWithTitle:@"旧密码" placeHolder:@"请输入支付密码"];
+        _oldPayPwdTF.keyboardType = UIKeyboardTypeNumberPad;
+        _oldPayPwdTF.secureTextEntry = YES;
+        _oldPayPwdTF.delegate = self;
+    }
+    return _oldPayPwdTF;
+}
+
+- (KPTextField *)payPwdTF {
+    if (_payPwdTF == nil) {
+        _payPwdTF = [KPTextField textFieldWithTitle:@"新密码" placeHolder:@"请输入新支付密码"];
+        _payPwdTF.keyboardType = UIKeyboardTypeNumberPad;
+        _payPwdTF.secureTextEntry = YES;
+        _payPwdTF.delegate = self;
+    }
+    return _payPwdTF;
+}
+
+- (KPTextField *)repeatPayPwdTF {
+    if (_repeatPayPwdTF == nil) {
+        _repeatPayPwdTF = [KPTextField textFieldWithTitle:@"重复密码" placeHolder:@"请重新输入密码"];
+        _repeatPayPwdTF.keyboardType = UIKeyboardTypeNumberPad;
+        _repeatPayPwdTF.secureTextEntry = YES;
+        _repeatPayPwdTF.delegate = self;
+    }
+    return _repeatPayPwdTF;
+}
+
+- (UILabel *)tipLB {
+    if (_tipLB == nil) {
+        _tipLB = [UILabel new];
+        _tipLB.font = UIFont_12;
+        _tipLB.textColor = GrayColor;
+        _tipLB.text = @"请输入6位数字组成的密码 ";
+    }
+    return _tipLB;
+}
+
+- (KPBottomButton *)doneBtn {
+    if (_doneBtn == nil) {
+        _doneBtn = [KPBottomButton bottomButtonWithTitle:@"确定" target:self action:@selector(clickDoneButton)];
+    }
+    return _doneBtn;
+}
+
+
+@end

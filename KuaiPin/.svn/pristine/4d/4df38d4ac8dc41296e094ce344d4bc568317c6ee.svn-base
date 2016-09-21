@@ -1,0 +1,322 @@
+//
+//  KPSubsidizeViewModel.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/4/26.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPSubsidizeViewModel.h"
+#import "KPSubsidizeCell.h"
+#import "KPSubsidizeSectionHeaderView.h"
+#import "KPSubsidizeModel.h"
+#import "KPSeparatorSectionFooterView.h"
+#import "KPProduct.h"
+
+@interface KPSubsidizeViewModel ()
+
+@property (nonatomic, strong) KPSubsidizeModel *subsidizeModel;
+
+@property (nonatomic, strong) NSMutableSet<KPGoodModel *> *ordorForm;
+
+@property (nonatomic, assign) NSInteger maxItem;
+
+@end
+
+@implementation KPSubsidizeViewModel
+
+- (CGFloat)totalPrice {
+    
+    __block CGFloat totalPrice = 0.0;
+    
+    [self.ordorForm enumerateObjectsUsingBlock:^(KPGoodModel * _Nonnull obj, BOOL * _Nonnull stop) {
+       
+        if (obj.selected) {
+            totalPrice += (obj.productPrice.floatValue * obj.productAmount.integerValue);
+        }
+        
+    }];
+    
+//    WHYNSLog(@"%.2f", totalPrice);
+    return totalPrice;
+}
+
+#pragma mark - 改变商品的数量
+- (NSArray *)changeGoodNumerWithGoodModel:(id)goodModel number:(NSString *)number {
+    
+    KPGoodModel *good = (KPGoodModel *)goodModel;
+    good.selected = YES;
+    good.productAmount = @(number.integerValue);
+    
+    [self.ordorForm addObject:good];
+    
+    if (self.ordorForm.count == self.maxItem) {
+        self.selectedAll = YES;
+    }
+    
+//    WHYNSLog(@"%@", self.ordorForm);
+    return self.ordorForm.allObjects;
+}
+
+#pragma mark - 删除订单中的商品
+- (NSString *)deleteCartItemIds{
+    
+    NSMutableArray *idsArr = [NSMutableArray array];
+    
+    [self.ordorForm enumerateObjectsUsingBlock:^(KPGoodModel * _Nonnull obj, BOOL * _Nonnull stop) {
+       
+        [idsArr addObject:obj.cartItemId];
+        
+    }];
+    
+    NSString *ids = [idsArr componentsJoinedByString:@","];
+    
+    WHYNSLog(@"%@", ids);
+    
+    return ids;
+}
+
+#pragma mark - 添加商品到订单中
+- (NSArray *)addGoodToOrderFormWithGoodModel:(id)goodModel {
+    
+    KPGoodModel *good = (KPGoodModel *)goodModel;
+    good.selected = YES;
+    
+    [self.ordorForm addObject:good];
+    
+    if (self.ordorForm.count == self.maxItem) {
+        self.selectedAll = YES;
+    }
+    
+//    WHYNSLog(@"%@", self.ordorForm);
+    return self.ordorForm.allObjects;
+}
+
+- (NSArray *)addVendorAllGoodsToOrderFormWithVendorModel:(id)vendorModel {
+    
+    KPVendorModel *vendor = (KPVendorModel *)vendorModel;
+    
+    __weak typeof(self) weakSelf = self;
+    [vendor.items enumerateObjectsUsingBlock:^(KPGoodModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (obj.selecteEnable) {
+            obj.selected = YES;
+            [weakSelf.ordorForm addObject:obj];
+        }
+    }];
+    
+    if (self.ordorForm.count == self.maxItem) {
+        self.selectedAll = YES;
+    }
+
+//    WHYNSLog(@"%@", self.ordorForm);
+    return self.ordorForm.allObjects;
+}
+
+- (NSArray *)addAllGoodsToOrderForm {
+    
+    __weak typeof(self) weakSelf = self;
+    
+    [self.subsidizeModel.cart enumerateObjectsUsingBlock:^(KPVendorModel * _Nonnull vendor,
+                                               NSUInteger vendorIndex,
+                                               BOOL * _Nonnull stopVendor) {
+       
+        [vendor.items enumerateObjectsUsingBlock:^(KPGoodModel * _Nonnull good,
+                                                   NSUInteger goodIndex,
+                                                   BOOL * _Nonnull stopGood) {
+            if (good.selecteEnable) {
+                good.selected = YES;
+                [weakSelf.ordorForm addObject:good];
+            }
+        }];
+        
+    }];
+    
+//    WHYNSLog(@"%@", self.ordorForm);
+    return self.ordorForm.allObjects;
+}
+
+#pragma mark - 从订单中移除商品
+- (NSArray *)removeGoodToOrderFormWithGoodModel:(id)goodModel {
+    
+    KPGoodModel *good = (KPGoodModel *)goodModel;
+    good.selected = NO;
+    
+    [self.ordorForm removeObject:good];
+    
+    self.selectedAll = NO;
+    
+//    WHYNSLog(@"%@", self.ordorForm);
+    return self.ordorForm.allObjects;
+}
+
+- (NSArray *)removeVendorAllGoodsToOrderFormWithVendorModel:(id)vendorModel {
+    
+    KPVendorModel *vendor = (KPVendorModel *)vendorModel;
+    
+    __weak typeof(self) weakSelf = self;
+    [vendor.items enumerateObjectsUsingBlock:^(KPGoodModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        obj.selected = NO;
+        [weakSelf.ordorForm removeObject:obj];
+    }];
+    
+    self.selectedAll = NO;
+    
+//    WHYNSLog(@"%@", self.ordorForm);
+    return self.ordorForm.allObjects;
+}
+
+- (NSArray *)removeAllGoodsToOrderForm {
+    
+    [self.subsidizeModel.cart enumerateObjectsUsingBlock:^(KPVendorModel * _Nonnull vendor,
+                                               NSUInteger vendorIndex,
+                                               BOOL * _Nonnull stopVendor) {
+        
+        [vendor.items enumerateObjectsUsingBlock:^(KPGoodModel * _Nonnull good,
+                                                   NSUInteger goodIndex,
+                                                   BOOL * _Nonnull stopGood) {
+            good.selected = NO;
+        }];
+        
+    }];
+    
+    [self.ordorForm removeAllObjects];
+//    WHYNSLog(@"%@", self.ordorForm);
+    return self.ordorForm.allObjects;
+}
+
+#pragma mark - 公共方法
+- (void)setData:(id)data {
+
+    WHYNSLog(@"%@", data);
+
+    self.subsidizeModel = [KPSubsidizeModel mj_objectWithKeyValues:data];
+
+    __block NSUInteger maxItem = 0;
+    __block BOOL selecteAllEnable = NO;
+    [self.subsidizeModel.cart enumerateObjectsUsingBlock:^(KPVendorModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+
+        if (obj.vendorSelecteEnable) {
+            selecteAllEnable = YES;
+        }
+
+        maxItem += obj.goodsCount;
+    }];
+
+    self.selectedAllEnable = selecteAllEnable;
+    self.maxItem = maxItem;
+    
+}
+
+- (id)getDataModel {
+    
+    NSString *tempPath = [KPSubsidizeModel tempPathWithFileName:@"subsidize.data"];
+
+    if (![self.subsidizeModel writeModelToPath:tempPath]) return nil;
+    
+    KPSubsidizeModel *subsidizeModel = [KPSubsidizeModel readModleWithPath:tempPath];
+    
+    for (int i = 0; i < subsidizeModel.cart.count; i++) {
+        
+        KPVendorModel *vendor = subsidizeModel.cart[i];
+        
+        for (int j = 0; j < vendor.items.count; j++) {
+            
+            KPGoodModel *good = vendor.items[j];
+            
+            if (!good.selected) {
+                [vendor.items removeObject:good];
+                j--;
+            }
+            
+        }
+        
+        if (vendor.items.count == 0) {
+            [subsidizeModel.cart removeObject:vendor];
+            i--;
+        }
+        
+    }
+    
+    return subsidizeModel.cart;
+}
+
+- (KPProduct *)getProductWithIndexPath:(NSIndexPath *)indexPath {
+
+    KPProduct *product = [KPProduct new];
+    KPGoodModel *good = self.subsidizeModel.cart[indexPath.section].items[indexPath.row];
+    product.productId = good.productId;
+    product.itemId = good.cartItemId;
+
+    return product;
+}
+
+- (CGFloat)heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return [KPSubsidizeCell cellHeight];
+}
+
+- (NSInteger)numberOfSections {
+    return self.subsidizeModel.cart.count;
+}
+
+- (NSInteger)numberOfRowsInSection:(NSInteger)section {
+    return self.subsidizeModel.cart[section].items.count;
+}
+
+- (UIView *)viewForHeaderInSection:(NSInteger)section tableView:(UITableView *)tableView{
+
+    KPSubsidizeSectionHeaderView *headerView = [KPSubsidizeSectionHeaderView headerViewWithTableView:tableView];
+    headerView.vendorModel = self.subsidizeModel.cart[section];
+    headerView.sectionIndex = section;
+    
+    if (section > 0) {
+        headerView.shouldShowTopSeperator = YES;
+    }else {
+        headerView.shouldShowTopSeperator = NO;
+    }
+    
+    return headerView;
+}
+
+- (CGFloat)heightForHeaderInSection:(NSInteger)section {
+    return [KPSubsidizeSectionHeaderView headerViewHeight];
+}
+
+- (UITableViewCell *)cellForRowAtIndexPath:(NSIndexPath *)indexPath tableView:(UITableView *)tableView {
+
+    if (self.subsidizeModel.cart.count == 0 || self.subsidizeModel.cart[indexPath.section].items.count == 0) {
+        return nil;
+    }
+
+    KPSubsidizeCell *cell = [KPSubsidizeCell cellWithTableView:tableView];
+    
+    cell.model = self.subsidizeModel.cart[indexPath.section].items[indexPath.row];
+    
+    if (indexPath.row == [self numberOfRowsInSection:indexPath.section] - 1) {
+        cell.showBottomSep = NO;
+    }else {
+        cell.showBottomSep = YES;
+    }
+    
+    return cell;
+}
+
+- (UIView *)viewForFooterInSection:(NSInteger)section tableView:(UITableView *)tableView {
+    if (!self.subsidizeModel.cart.count) return nil;
+    return [KPSeparatorSectionFooterView footerViewWithTableView:tableView];
+}
+
+- (CGFloat)heightForFooterInSection:(NSInteger)section {
+    return 10;
+}
+
+#pragma mark - 懒加载
+- (NSMutableSet<KPGoodModel *> *)ordorForm {
+    if (_ordorForm == nil) {
+        _ordorForm = [NSMutableSet set];
+    }
+    return _ordorForm;
+}
+
+singleton_implementation(ViewModel)
+
+@end

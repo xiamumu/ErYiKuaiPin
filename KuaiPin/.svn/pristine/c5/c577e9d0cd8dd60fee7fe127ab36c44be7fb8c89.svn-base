@@ -1,0 +1,105 @@
+//
+//  KPBaseOrderViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/6/8.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPBaseOrderViewController.h"
+
+#import "KPAllOrderViewController.h"
+#import "KPUnPayOrderViewController.h"
+#import "KPUnReceiveOrderViewController.h"
+#import "KPCancelOrderViewController.h"
+#import "KPFinishOrderViewController.h"
+#import "KPOrderDetailViewController.h"
+
+
+// View
+//#import "KPUnPayOrdersView.h"
+//#import "KPUnReceiveOrdersView.h"
+//#import "KPCancelOrdersView.h"
+//#import "KPFinishOrdersView.h"
+//#import "KPAllOrdersView.h"
+
+
+
+@interface KPBaseOrderViewController ()
+
+@end
+
+@implementation KPBaseOrderViewController
+
+- (KPOrderParam *)orderParam
+{
+    if (_orderParam == nil) {
+        _orderParam = [KPOrderParam param];
+    }
+    return _orderParam;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    self.view.backgroundColor = BaseColor;
+    self.automaticallyAdjustsScrollViewInsets = NO;
+    
+    [self.view addSubview:self.pageMenu];
+    
+    NSAddObserver(showOrderDetailVc:, Noti_ShowOrderDetailVc);
+
+    self.title = @"我的订单";
+}
+
+- (XMScrollPageMenu *)pageMenu
+{
+    if (_pageMenu == nil) {
+        _pageMenu = [XMScrollPageMenu menu];
+        _pageMenu.frame = CGRectMake(0, 64, SCREEN_W, SCREEN_H - 64);
+        
+        // 添加全部订单
+        KPAllOrderViewController *allOrders = [[KPAllOrderViewController alloc] init];
+        
+        // 添加未支付页面
+        KPUnPayOrderViewController *unPay = [[KPUnPayOrderViewController alloc] init];
+        
+        // 添加未收货页面
+        KPUnReceiveOrderViewController *unReceive = [[KPUnReceiveOrderViewController alloc] init];
+        
+        // 添加取消页面
+        KPCancelOrderViewController *cancle = [[KPCancelOrderViewController alloc] init];
+        
+        // 添加已完成页面
+        KPFinishOrderViewController *finish = [[KPFinishOrderViewController alloc] init];
+        
+        _pageMenu.childViews = @[unPay, unReceive, cancle, finish, allOrders];
+        _pageMenu.titles = @[@"待付款", @"待收货", @"已取消", @"已完成", @"全部订单"];
+        _pageMenu.selectedPageIndex = self.selectedPageIndex;
+        _pageMenu.titleFont = UIFont_16;
+        _pageMenu.titleSelectedFont = UIFont_16;
+        
+        [self addChildViewController:unPay];
+        [self addChildViewController:unReceive];
+        [self addChildViewController:cancle];
+        [self addChildViewController:finish];
+        [self addChildViewController:allOrders];
+    }
+    return _pageMenu;
+}
+
+- (void)showOrderDetailVc:(NSNotification *)noti {
+    
+    if (!noti.userInfo) return;
+    
+    KPOrderDetailViewController *orderDetailVc = [KPOrderDetailViewController new];
+    orderDetailVc.orderSn = noti.userInfo[OrderSnKey];
+    [self.navigationController pushViewController:orderDetailVc animated:YES];
+    
+}
+
+- (void)dealloc
+{
+    NSRemoveObserver
+}
+
+@end

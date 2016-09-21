@@ -1,0 +1,20 @@
+//
+//  KPGoodsDetailSpecList.h
+//  KuaiPin
+//
+//  Created by 21_xm on 16/7/12.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+@class KPSpecValue;
+
+@interface KPSpecList : NSObject
+
+/***  类别名称  */
+@property (nonatomic, copy) NSString *spName;
+@property (nonatomic, copy) NSString *spSort;
+@property (nonatomic, copy) NSString *ID;
+@property (nonatomic, strong) NSArray <KPSpecValue *> *specValue;
+
+@end

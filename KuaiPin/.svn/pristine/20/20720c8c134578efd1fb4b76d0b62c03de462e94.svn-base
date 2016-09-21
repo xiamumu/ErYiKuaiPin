@@ -1,0 +1,60 @@
+//
+//  KPGoodsDetailInfoView.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/8/30.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPGoodsDetailInfoView.h"
+
+@interface KPGoodsDetailInfoView ()
+
+@property (weak, nonatomic) IBOutlet UILabel *title;
+
+@property (weak, nonatomic) IBOutlet UILabel *priceLab;
+
+@property (weak, nonatomic) IBOutlet UILabel *desLab;
+
+@property (nonatomic, weak) KPButton *explainBtn;
+
+@end
+
+@implementation KPGoodsDetailInfoView
+
++ (instancetype)detailInfoView
+{
+    return [[[NSBundle mainBundle] loadNibNamed:@"KPGoodsDetailInfoView" owner:nil options:nil] objectAtIndex:0];
+}
+
+
+
+- (void)setProductName:(NSString *)productName
+{
+    _productName = productName;
+    self.title.text = productName;
+}
+
+- (void)setProductPrice:(NSString *)productPrice
+{
+    _productPrice = productPrice;
+    self.priceLab.text = [NSString stringWithFormat:@"￥%.2f", [productPrice floatValue]];
+    self.desLab.text = [NSString stringWithFormat:@"消费即可赢得%@元二一美银消费资产", productPrice];
+
+}
+// 点击查看消费补贴详情
+- (IBAction)explainBtnAction:(KPButton *)sender
+{
+    if (self.checkAssetExplain) {
+        self.checkAssetExplain();
+    }
+}
+
+
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+ 
+    
+}
+@end

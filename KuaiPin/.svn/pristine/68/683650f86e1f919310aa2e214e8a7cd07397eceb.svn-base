@@ -1,0 +1,19 @@
+//
+//  KPSingleChooseView.h
+//  KuaiPin
+//
+//  Created by 21_xm on 16/7/13.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+@class KPSpecValue;
+
+@interface KPSingleChooseView : UIView
+
+
+@property (nonatomic, copy) NSString *title;
+
+@property (nonatomic, strong) NSArray <KPSpecValue *> *specValues;
+
+@end

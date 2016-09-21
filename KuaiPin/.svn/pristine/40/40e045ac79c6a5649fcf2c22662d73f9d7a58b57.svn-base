@@ -1,0 +1,181 @@
+//
+//  KPSelectAssetsViewController.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/9/1.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPSelectAssetsViewController.h"
+#import "KPPayBackCell.h"
+#import "KPWithoutAnythingView.h"
+#import "KPPayBackOrder.h"
+#import "KPPayBackOrderParam.h"
+#import "KPAdvancedPayBackDetailViewController.h"
+
+
+@interface KPSelectAssetsViewController ()<UITableViewDelegate, UITableViewDataSource>
+
+@property (nonatomic, strong) UITableView *tableView;
+
+@property (nonatomic, weak) KPWithoutAnythingView *withoutAnythingView;
+
+@property (nonatomic, strong) NSMutableArray <KPPayBackOrder *> *payBackOrders;
+
+/** 分页页码 */
+@property (nonatomic, assign) NSUInteger pageNumber;
+
+@end
+
+@implementation KPSelectAssetsViewController
+
+#pragma mark - 控制器生命周期
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    self.pageNumber = 1;
+    [self setupUI];
+
+    self.navigationItem.title = @"选择消费资产";
+
+    [self setupData];
+
+
+    __weak typeof (self) weakSelf = self;
+    self.tableView.mj_header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+        weakSelf.pageNumber = 1;
+        [weakSelf setupData];
+        [weakSelf.tableView.mj_header endRefreshing];
+    }];
+
+        // 刷新订单
+    NSAddObserver(refreshOrders, Noti_RefreshOrders)
+
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark - NSNotification
+- (void)refreshOrders
+{
+    [self setupData];
+}
+
+#pragma mark - 私有方法
+- (void)setupUI {
+    self.view.backgroundColor = ViewBgColor;
+
+    [self.view addSubview:self.tableView];
+
+    __weak typeof(self) weakSelf = self;
+
+    [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.mas_equalTo(weakSelf.view);
+    }];
+}
+
+- (void)setupData
+{
+    __weak typeof (self) weakSelf = self;
+
+    KPPayBackOrderParam *param = [KPPayBackOrderParam param];
+    param.assetsState = 0;
+
+    [KPNetworkingTool GetAssetsOrdersWithParam:param success:^(id result) {
+
+        if (CODE == 0) {
+
+            if (weakSelf.payBackOrders.count != 0) {
+                [weakSelf.payBackOrders removeAllObjects];
+            }
+
+            weakSelf.payBackOrders = [KPPayBackOrder mj_objectArrayWithKeyValuesArray:result[@"data"][@"assets"]];
+
+                // 刷新表格
+            [weakSelf.tableView reloadData];
+
+        } else {  WHYNSLog(@"请求数据失败%@",result[@"message"]); }
+
+            // 如果无订单，则提示用户无可现实的内容
+        weakSelf.withoutAnythingView.hidden = weakSelf.payBackOrders.count != 0;
+
+
+    } failure:^(NSError *error) {
+        WHYNSLog(@"%@", error);
+    }];
+}
+
+
+
+#pragma mark - UITableViewDataSource
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return self.payBackOrders.count;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return 1;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    KPPayBackCell *cell = [KPPayBackCell cellWithTable:tableView];
+    cell.payBackOrder = self.payBackOrders[indexPath.section];
+    return cell;
+}
+
+#pragma mark - UITableViewDelegate
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return CommonMargin;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
+    return 0.00001;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+
+    KPAdvancedPayBackDetailViewController *payBackDetailVc = [[KPAdvancedPayBackDetailViewController alloc] init];
+    payBackDetailVc.assetsSn = self.payBackOrders[indexPath.section].assetsSn;
+    payBackDetailVc.orderSn = self.payBackOrders[indexPath.section].orderSn;
+    payBackDetailVc.productId = self.payBackOrders[indexPath.section].productId;
+    [self.navigationController pushViewController:payBackDetailVc animated:YES];
+    
+}
+
+#pragma mark - 懒加载
+- (UITableView *)tableView {
+    if (_tableView == nil) {
+        _tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleGrouped];
+        _tableView.delegate = self;
+        _tableView.dataSource = self;
+        _tableView.showsHorizontalScrollIndicator = NO;
+        _tableView.showsVerticalScrollIndicator = NO;
+        _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+        _tableView.rowHeight = 89;
+        _tableView.backgroundColor = ClearColor;
+    }
+    return _tableView;
+}
+
+- (KPWithoutAnythingView *)withoutAnythingView {
+    if (_withoutAnythingView == nil) {
+        KPWithoutAnythingView *withoutView = [[KPWithoutAnythingView alloc] init];
+        withoutView.frame = CGRectMake(0, 0, SCREEN_W, 300);
+        withoutView.message = @"对不起，没有可显示的消费资产订单";
+        [self.view addSubview:withoutView];
+        _withoutAnythingView = withoutView;
+    }
+    return _withoutAnythingView;
+}
+
+- (NSMutableArray *)payBackOrders {
+    if (_payBackOrders == nil) {
+        _payBackOrders = [NSMutableArray array];
+    }
+    return _payBackOrders;
+}
+
+@end

@@ -1,0 +1,118 @@
+//
+//  KPPayBackDetailContentView.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/11.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPPayBackDetailContentView.h"
+
+@interface KPPayBackDetailContentView ()
+@property (nonatomic, weak) UILabel *orderNum;
+@property (nonatomic, weak) UILabel *titleLab;
+@property (nonatomic, weak) UILabel *orderCount;
+@property (nonatomic, weak) UILabel *price;
+@property (nonatomic, weak) UIImageView *imgView;
+@property (nonatomic, weak) UIView *line;
+@end
+@implementation KPPayBackDetailContentView
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        
+        UIImageView *imgView = [[UIImageView alloc] init];
+        [self addSubview:imgView];
+        self.imgView = imgView;
+        
+        UILabel *orderNum = [[UILabel alloc] init];
+        orderNum.textAlignment = NSTextAlignmentLeft;
+        orderNum.textColor = GrayColor;
+        orderNum.font = UIFont_12;
+        [self addSubview:orderNum];
+        self.orderNum = orderNum;
+        
+        UILabel *titleLab = [[UILabel alloc] init];
+        titleLab.textColor = BlackColor;
+        titleLab.textAlignment = NSTextAlignmentLeft;
+        titleLab.numberOfLines = 0;
+        titleLab.font = UIFont_13;
+        [self addSubview:titleLab];
+        self.titleLab = titleLab;
+        
+        UILabel *orderCount = [[UILabel alloc] init];
+        orderCount.textAlignment = NSTextAlignmentLeft;
+        orderCount.textColor = GrayColor;
+        orderCount.font = UIFont_12;
+        [self addSubview:orderCount];
+        self.orderCount = orderCount;
+        
+        UILabel *price = [[UILabel alloc] init];
+        price.textColor = RedColor;
+        price.textAlignment = NSTextAlignmentRight;
+        price.font = UIFont_14;
+        [self addSubview:price];
+        self.price = price;
+        
+        UIView *line = [[UIView alloc] init];
+        line.backgroundColor = SeperatorColor;
+        [self addSubview:line];
+        self.line = line;
+        
+    }
+    return self;
+}
+
+- (void)setOrderItem:(KPOrderItem *)orderItem
+{
+    _orderItem = orderItem;
+    self.orderCount.text = [NSString stringWithFormat:@"x%@", orderItem.productAmount];
+    self.price.text = [NSString stringWithFormat:@"￥%.2f", [orderItem.productPayPrice floatValue]];
+    [self.imgView sd_setImageWithURL:[NSURL URLWithString:orderItem.productImage] placeholderImage:[UIImage imageNamed:@"commitOrder_Placeholder"]];
+    self.titleLab.text = orderItem.productName;
+    
+}
+- (void)layoutSubviews
+{
+    __weak typeof (self) weakSelf = self;
+    
+    CGSize imgViewSize = CGSizeMake(65, 65);
+    [self.imgView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf).offset(CommonMargin);
+        make.centerY.mas_equalTo(weakSelf);
+        make.size.mas_equalTo(imgViewSize);
+    }];
+    
+    [self.orderNum mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.imgView.mas_right).offset(CommonMargin);
+        make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
+        make.top.mas_equalTo(weakSelf.imgView);
+    }];
+    
+    CGFloat titleLabH = [self.titleLab.text sizeWithAttributes:@{NSFontAttributeName: self.titleLab.font}].height * 2 + 5;
+    [self.titleLab mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.imgView.mas_right).offset(CommonMargin);
+        make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
+        make.centerY.mas_equalTo(weakSelf.imgView).offset(-5);
+        make.height.mas_equalTo(titleLabH);
+    }];
+    
+    [self.orderCount mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.imgView.mas_right).offset(CommonMargin);
+        make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
+        make.bottom.mas_equalTo(weakSelf.imgView);
+    }];
+    
+    [self.price mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
+        make.bottom.mas_equalTo(weakSelf).offset(-CommonMargin);
+    }];
+    
+    [self.line mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.bottom.mas_equalTo(weakSelf);
+        make.height.mas_equalTo(1);
+    }];
+}
+@end

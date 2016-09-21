@@ -1,0 +1,134 @@
+//
+//  KPBrandViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/5.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+// Controller
+#import "KPBrandViewController.h"
+#import "KPShopViewController.h"
+
+// Cell
+#import "KPBrandTableViewCell.h"
+
+// Model
+#import "KPMoreBrandsResult.h"
+#import "KPBrand.h"
+
+@interface KPBrandViewController ()<UITableViewDataSource, UITableViewDelegate>
+
+@property (nonatomic, weak) UITableView *table;
+@property (nonatomic, strong) KPMoreBrandsResult *brandsResult;
+
+@end
+
+@implementation KPBrandViewController
+
+- (KPMoreBrandsResult *)brandsResult
+{
+    if (_brandsResult == nil) {
+        _brandsResult = [[KPMoreBrandsResult alloc] init];
+    }
+    return _brandsResult;
+}
+
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    // 添加table
+    [self setupTable];
+    
+    
+    // 请求数据
+    [self setupData];
+}
+
+- (void)setupTable
+{
+    self.automaticallyAdjustsScrollViewInsets = NO;
+    UITableView *table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
+    table.delegate = self;
+    table.dataSource = self;
+    table.showsVerticalScrollIndicator = NO;
+    table.separatorStyle = UITableViewCellAccessoryNone;
+    table.tableFooterView = [[UIView alloc] init];
+    table.backgroundColor = ViewBgColor;
+    [self.view addSubview:table];
+    self.table = table;
+    
+    __weak typeof (self) weakSelf = self;
+    
+    table.mj_header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+        
+        [weakSelf.table.mj_header endRefreshing];
+    }];
+    table.mj_footer = [MJRefreshFooter footerWithRefreshingBlock:^{
+        
+    }];
+    
+    CGFloat top = [self checkNavigationBarBackgrounImage] ? 0 : 64;
+    [table mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.bottom.right.mas_equalTo(weakSelf.view);
+        make.top.mas_equalTo(weakSelf.view).offset(top);
+    }];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    KPStatisticsBeginWithViewName(SelfClassStr)
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    KPStatisticsEndWithViewName(SelfClassStr)
+}
+
+- (void)setupData
+{
+    __weak typeof (self) weakSelf = self;
+    
+    [KPNetworkingTool loadMoreBrandsSuccess:^(id result) {
+        
+        if (CODE != 0) { WHYNSLog(@"请求数据失败%@",result[@"message"]); return; }
+        
+        weakSelf.brandsResult = [KPMoreBrandsResult mj_objectWithKeyValues:result[@"data"]];
+        
+        [weakSelf.table reloadData];
+        
+    } failure:^(NSError *error) { }];
+}
+
+- (BOOL)checkNavigationBarBackgrounImage {
+    return !![self.navigationController.navigationBar backgroundImageForBarMetrics:UIBarMetricsDefault];
+}
+
+#pragma mark - UITableViewDataSource UITableViewDelegate
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return self.brandsResult.brands.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    KPBrandTableViewCell *cell = [KPBrandTableViewCell cellWithTable:tableView];
+    cell.brand = self.brandsResult.brands[indexPath.row];
+    return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 79;
+}
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    KPShopViewController *shopVc = [[KPShopViewController alloc] init];
+    KPBrand *brand = self.brandsResult.brands[indexPath.row];
+    shopVc.brand = brand;
+    [self.navigationController pushViewController:shopVc animated:YES];
+}
+
+@end

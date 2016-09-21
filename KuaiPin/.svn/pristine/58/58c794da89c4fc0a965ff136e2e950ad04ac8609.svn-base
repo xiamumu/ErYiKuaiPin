@@ -1,0 +1,74 @@
+//
+//  KPEncrypt.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/8/5.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPEncrypt.h"
+#import <CommonCrypto/CommonDigest.h>
+
+const char *MD5KEY = "21KuaiPin";
+
+@implementation KPEncrypt
+
+NSString *encryptWithParameter(id paramter) {
+
+    if (![paramter isKindOfClass:[NSDictionary class]]) return nil;
+
+    NSTimeInterval interval = [NSDate date].timeIntervalSince1970;
+
+    NSMutableDictionary *paraMult = [NSMutableDictionary dictionaryWithDictionary:paramter];
+
+    paraMult[@"curTime"] = [NSString stringWithFormat:@"%.0f", interval * 1000];
+
+    paraMult[@"key"] = [NSString stringWithUTF8String:MD5KEY];
+
+    paraMult[@"signature"] = MD5WithStr(strWithParameter(paraMult));
+
+    [paraMult removeObjectForKey:@"key"];
+
+    return strWithParameter(paraMult);
+}
+
+NSString *strWithParameter(NSDictionary *parameter) {
+
+    NSMutableArray *keyArr = [NSMutableArray arrayWithCapacity:4];
+
+    [parameter enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+        [keyArr addObject:key];
+    }];
+
+    NSArray *sortKeyArr = [keyArr sortedArrayUsingComparator:^NSComparisonResult(NSString *key1, NSString *key2) {
+        return [key1 compare:key2 options:NSCaseInsensitiveSearch];
+    }];
+
+    __block NSMutableString *tempStr = [NSMutableString stringWithCapacity:150];
+
+    [sortKeyArr enumerateObjectsUsingBlock:^(NSString *  _Nonnull key, NSUInteger idx, BOOL * _Nonnull stop) {
+        [tempStr appendFormat:@"%@=%@", key, parameter[key]];
+        if (idx != sortKeyArr.count-1) [tempStr appendString:@"&"];
+    }];
+
+    return [tempStr copy];
+}
+
+NSString *MD5WithStr(NSString *str) {
+
+    const char *ch = str.UTF8String;
+
+    unsigned char result[CC_MD5_DIGEST_LENGTH];
+
+    CC_MD5(ch, (CC_LONG)strlen(ch), result);
+
+    NSMutableString *tempStr = [NSMutableString stringWithCapacity:CC_MD5_DIGEST_LENGTH * 2];
+
+    for (int i = 0; i < CC_MD5_DIGEST_LENGTH; i++) {
+        [tempStr appendFormat:@"%02x", result[i]];
+    }
+
+    return [tempStr copy];
+}
+
+@end

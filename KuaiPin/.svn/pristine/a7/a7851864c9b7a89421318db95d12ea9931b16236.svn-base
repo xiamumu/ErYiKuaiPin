@@ -1,0 +1,616 @@
+//
+//  KPAddressPickerViewController.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/4/27.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPAddressPickerViewController.h"
+#import "KPAreaListViewController.h"
+#import "KPAreaSelectedButton.h"
+
+@interface KPAddressPickerViewController ()<UIScrollViewDelegate>
+
+@property (nonatomic, strong) KPButton *maskBtn;
+
+@property (nonatomic, strong) UIView *addressPickerView;
+
+@property (nonatomic, strong) KPButton *cancelBtn;
+
+@property (nonatomic, strong) UILabel *titleLB;
+
+@property (nonatomic, strong) UIScrollView *scrollView;
+
+@property (nonatomic, strong) UIView *lastView;
+
+@property (nonatomic, assign) NSInteger currentPage;
+
+@property (nonatomic, strong) UIView *indicatorView;
+
+//KPAreaSelectedButton
+@property (nonatomic, strong) KPAreaSelectedButton *firstAreaBtn;
+@property (nonatomic, strong) KPAreaSelectedButton *secoundAreaBtn;
+@property (nonatomic, strong) KPAreaSelectedButton *thirdAreaBtn;
+@property (nonatomic, strong) KPAreaSelectedButton *fourthAreaBtn;
+
+//KPAreaListViewController
+@property (nonatomic, strong) KPAreaListViewController *firstAreaVc;
+@property (nonatomic, strong) KPAreaListViewController *secoundAreaVc;
+@property (nonatomic, strong) KPAreaListViewController *thirdAreaVc;
+@property (nonatomic, strong) KPAreaListViewController *fourthAreaVc;
+
+@end
+
+@implementation KPAddressPickerViewController
+
+- (void)showView {
+    
+    [self.firstAreaVc reloadDataWithParentId:0];
+    
+    if (self.addressModel) {
+        
+        self.secoundAreaVc.parentId = self.addressModel.provinceId.integerValue;
+        self.thirdAreaVc.parentId = self.addressModel.cityId.integerValue;
+        
+        [self firstAreaVcNextHandlerWith:self.addressModel.provinceName itemId:self.addressModel.provinceId];
+        [self secoundAreaVcNextHandlerWith:self.addressModel.cityName itemId:self.addressModel.cityId];
+        [self thirdAreaVcNextHandlerWith:self.addressModel.countryName itemId:self.addressModel.countryId save:NO];
+        
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    [UIView animateWithDuration:0.5 animations:^{
+        weakSelf.view.y = 0;
+    } completion:^(BOOL finished) {
+        
+        if (weakSelf.addressModel) {
+            weakSelf.firstAreaVc.itemId = weakSelf.addressModel.provinceId;
+            weakSelf.secoundAreaVc.itemId = weakSelf.addressModel.cityId;
+            weakSelf.thirdAreaVc.itemId = weakSelf.addressModel.countryId;
+        }
+        
+    }];
+
+}
+
+#pragma mark - 类方法
++ (instancetype)addressPickerVCWithFinishedHandler:(FinishedHandler)finishedHandler {
+    
+    KPAddressPickerViewController *addressPickerVC = [self new];
+    addressPickerVC.finishedHandler = finishedHandler;
+    
+    return addressPickerVC;
+}
+
+#pragma mark - 点击事件
+- (void)clickCancelButton {
+    
+    __weak typeof(self) weakSelf = self;
+    [UIView animateWithDuration:0.5 animations:^{
+        weakSelf.view.y = [UIScreen mainScreen].bounds.size.height;
+    }completion:^(BOOL finished) {
+        
+        if ([self canScrollToPage:2]) {
+            [self scrollToPage:2];
+            [self scrollIndicatorToPage:2];
+        }
+
+    }];
+    
+}
+
+- (void)clickFirstAreaButton {
+    [self scrollToPage:0];
+    [self scrollIndicatorToPage:0];
+}
+
+- (void)clickSecoundAreaButton {
+    [self scrollToPage:1];
+    [self scrollIndicatorToPage:1];
+}
+
+- (void)clickThirdAreaButton {
+    [self scrollToPage:2];
+    [self scrollIndicatorToPage:2];
+}
+
+- (void)clickFourthAreaButton {
+    [self scrollToPage:3];
+    [self scrollIndicatorToPage:3];
+}
+
+#pragma mark - UIScrollViewDelegate
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+    [self scrollIndicatorToPage:self.scrollView.contentOffset.x / SCREEN_W];
+}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+    [self scrollIndicatorToPage:self.scrollView.contentOffset.x / SCREEN_W];
+}
+
+#pragma mark - 控制器生命周期
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [self setupUI];
+    
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+- (void)dealloc {
+    WHYNSLog(@"KPAddressPickerViewController dealloc");
+}  
+
+#pragma mark - 私有方法
+- (void)scrollIndicatorToPage:(NSInteger)page {
+    
+    CGFloat x = 0.0;
+    CGFloat w = 0.0;
+    CGFloat margin = 18;
+    KPAreaListViewController *tempAreaListVc = nil;
+    
+    switch (page) {
+        case 0:
+        {
+            x = 9;
+            w = self.firstAreaBtn.width;
+            tempAreaListVc = self.firstAreaVc;
+        }
+            break;
+        case 1:
+        {
+            x = CGRectGetMaxX(self.firstAreaBtn.frame) + margin;
+            w = self.secoundAreaBtn.width;
+            tempAreaListVc = self.secoundAreaVc;
+        }
+            break;
+        case 2:
+        {
+            x = CGRectGetMaxX(self.secoundAreaBtn.frame) + margin;
+            w = self.thirdAreaBtn.width;
+            tempAreaListVc = self.thirdAreaVc;
+        }
+            break;
+        case 3:
+        {
+            x = CGRectGetMaxX(self.thirdAreaBtn.frame) + margin;
+            w = self.fourthAreaBtn.width;
+            tempAreaListVc = self.fourthAreaVc;
+        }
+            break;
+        default:
+            break;
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    [UIView animateWithDuration:0.5 animations:^{
+
+        weakSelf.indicatorView.x = x;
+        weakSelf.indicatorView.width = w;
+        
+    }];
+    
+}
+
+- (BOOL)canScrollToPage:(NSInteger)page {
+    
+    if (self.scrollView.subviews.count >= page+1) {
+        return YES;
+    }
+    
+    return NO;
+}
+
+- (void)scrollToPage:(NSInteger)page {
+    self.currentPage = page;
+    [self.scrollView setContentOffset:CGPointMake(SCREEN_W * page, 0) animated:YES];
+}
+
+- (void)addScrollViewSubview:(UIView *)subview {
+    
+    CGFloat scrollH = 323;
+    [self.scrollView addSubview:subview];
+    self.scrollView.contentSize = CGSizeMake(SCREEN_W * self.scrollView.subviews.count, scrollH);
+    
+    __weak typeof(self) weakSelf = self;
+    [subview mas_makeConstraints:^(MASConstraintMaker *make) {
+        
+        if (weakSelf.lastView) {
+            make.left.mas_equalTo(weakSelf.lastView.mas_right);
+        }else {
+            make.left.mas_equalTo(weakSelf.scrollView);
+        }
+        
+        make.top.mas_equalTo(weakSelf.scrollView);
+        make.height.mas_equalTo(scrollH);
+        make.width.mas_equalTo(SCREEN_W);
+    }];
+    
+    self.lastView = subview;
+    
+}
+
+- (void)savedAddressLocation {
+    
+    if (self.finishedHandler) {
+        
+        [self clickCancelButton];
+        
+        self.addressLocation = [NSString stringWithFormat:@"%@%@%@", self.firstAreaBtn.currentTitle,
+                                                                     self.secoundAreaBtn.currentTitle,
+                                                                     self.thirdAreaBtn.currentTitle];
+        self.finishedHandler(self.addressLocation);
+        
+        self.addressModel.provinceId = self.provinceId;
+        self.addressModel.provinceName = self.firstAreaBtn.currentTitle;
+        self.addressModel.cityId = self.cityId;
+        self.addressModel.cityName = self.secoundAreaBtn.currentTitle;
+        self.addressModel.countryId = self.countryId;
+        self.addressModel.countryName = self.thirdAreaBtn.currentTitle;
+        
+    }
+    
+}
+
+- (void)defaultSecoundArea {
+    [self.secoundAreaVc.view removeFromSuperview];
+    [self.secoundAreaBtn setTitle:@"请选择" forState:UIControlStateNormal];
+    self.secoundAreaBtn.selected = NO;
+    self.secoundAreaBtn.hidden = YES;
+}
+
+- (void)defaultThirdArea {
+    [self.thirdAreaVc.view removeFromSuperview];
+    [self.thirdAreaBtn setTitle:@"请选择" forState:UIControlStateNormal];
+    self.thirdAreaBtn.selected = NO;
+    self.thirdAreaBtn.hidden = YES;
+}
+
+- (void)defaultFourthArea {
+    [self.fourthAreaVc.view removeFromSuperview];
+    [self.fourthAreaBtn setTitle:@"请选择" forState:UIControlStateNormal];
+    self.fourthAreaBtn.selected = NO;
+    self.fourthAreaBtn.hidden = YES;
+}
+
+- (void)setupUI {
+    
+    self.view.backgroundColor = [UIColor clearColor];
+    
+    KPSeparatorView *sep = [KPSeparatorView new];
+    
+    [self.view addSubview:self.maskBtn];
+    [self.view addSubview:self.addressPickerView];
+    
+    [self.addressPickerView addSubview:self.cancelBtn];
+    [self.addressPickerView addSubview:self.titleLB];
+    [self.addressPickerView addSubview:sep];
+    [self.addressPickerView addSubview:self.scrollView];
+    
+    [self.addressPickerView addSubview:self.firstAreaBtn];
+    [self.addressPickerView addSubview:self.secoundAreaBtn];
+    [self.addressPickerView addSubview:self.thirdAreaBtn];
+    [self.addressPickerView addSubview:self.fourthAreaBtn];
+    [self.addressPickerView addSubview:self.indicatorView];
+    
+    [self addScrollViewSubview:self.firstAreaVc.view];
+    
+    __weak typeof(self) weakSelf = self;
+    [self.maskBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.mas_equalTo(weakSelf.view);
+    }];
+    
+    CGFloat pickerH = 400;
+    CGFloat left = 9;
+    CGFloat cancelMargin = 15;
+    CGFloat titleTop = 16;
+    CGFloat titleH = 17;
+    CGFloat sepTop = 75;
+    CGFloat sepH = 2;
+    CGFloat btnTop = 56;
+    CGFloat btnH = 13;
+    CGFloat btnMargin = 18;
+    CGFloat indicatorH = 2;
+    CGFloat indicatorTop = 75;
+    CGFloat indicatorW = [self.firstAreaBtn.currentTitle sizeWithAttributes:@{NSFontAttributeName : self.firstAreaBtn.currentTitleFont}].width;
+    
+    [self.addressPickerView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.bottom.mas_equalTo(weakSelf.view);
+        make.height.mas_equalTo(pickerH);
+    }];
+    
+    [self.cancelBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(weakSelf.addressPickerView).offset(-cancelMargin);
+        make.top.mas_equalTo(weakSelf.addressPickerView).offset(cancelMargin);
+    }];
+    
+    [self.titleLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.mas_equalTo(weakSelf.addressPickerView);
+        make.top.mas_equalTo(titleTop);
+        make.height.mas_equalTo(titleH);
+    }];
+    
+    [sep mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.addressPickerView).offset(sepTop);
+        make.left.right.mas_equalTo(weakSelf.addressPickerView);
+        make.height.mas_equalTo(sepH);
+    }];
+    
+    
+    [self.scrollView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.bottom.mas_equalTo(weakSelf.addressPickerView);
+        make.top.mas_equalTo(sep.mas_bottom);
+    }];
+    
+    [self.firstAreaBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.addressPickerView).offset(left);
+        make.top.mas_equalTo(weakSelf.addressPickerView).offset(btnTop);
+        make.height.mas_equalTo(btnH);
+    }];
+    
+    [self.secoundAreaBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.firstAreaBtn.mas_right).offset(btnMargin);
+        make.bottom.height.mas_equalTo(weakSelf.firstAreaBtn);
+    }];
+    
+    [self.thirdAreaBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.secoundAreaBtn.mas_right).offset(btnMargin);
+        make.bottom.height.mas_equalTo(weakSelf.firstAreaBtn);
+    }];
+    
+    [self.fourthAreaBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.thirdAreaBtn.mas_right).offset(btnMargin);
+        make.bottom.height.mas_equalTo(weakSelf.firstAreaBtn);
+    }];
+    
+    self.indicatorView.frame = CGRectMake(left, indicatorTop, indicatorW, indicatorH);
+    
+}
+
+- (void)firstAreaVcNextHandlerWith:(NSString *)areaName itemId:(NSNumber *)itemId {
+    
+    __weak typeof(self) weakSelf = self;
+    
+    if (![weakSelf.firstAreaBtn.currentTitle isEqualToString:areaName]) {
+        
+        weakSelf.firstAreaBtn.selected = YES;
+        [weakSelf.firstAreaBtn setTitle:areaName forState:UIControlStateNormal];
+        
+        [weakSelf defaultSecoundArea];
+        [weakSelf defaultThirdArea];
+        [weakSelf defaultFourthArea];
+        
+        weakSelf.lastView = weakSelf.firstAreaVc.view;
+        [weakSelf addScrollViewSubview:weakSelf.secoundAreaVc.view];
+        weakSelf.secoundAreaBtn.hidden = NO;
+        
+        [weakSelf.addressPickerView layoutIfNeeded];
+        
+        weakSelf.provinceId = itemId;
+        
+        [weakSelf.secoundAreaVc reloadDataWithParentId:itemId.integerValue];
+        
+    }
+    
+    [weakSelf scrollIndicatorToPage:1];
+    [weakSelf scrollToPage:1];
+}
+
+- (void)secoundAreaVcNextHandlerWith:(NSString *)areaName itemId:(NSNumber *)itemId {
+    
+    __weak typeof(self) weakSelf = self;
+    
+    if (![weakSelf.secoundAreaBtn.currentTitle isEqualToString:areaName]) {
+        
+        weakSelf.secoundAreaBtn.selected = YES;
+        [weakSelf.secoundAreaBtn setTitle:areaName forState:UIControlStateNormal];
+        
+        [weakSelf defaultThirdArea];
+        [weakSelf defaultFourthArea];
+        
+        weakSelf.lastView = weakSelf.secoundAreaVc.view;
+        [weakSelf addScrollViewSubview:weakSelf.thirdAreaVc.view];
+        weakSelf.thirdAreaBtn.hidden = NO;
+        
+        [weakSelf.addressPickerView layoutIfNeeded];
+        
+        weakSelf.cityId = itemId;
+        
+        [weakSelf.thirdAreaVc reloadDataWithParentId:itemId.integerValue];
+        
+    }
+    
+    [weakSelf scrollIndicatorToPage:2];
+    
+    [weakSelf scrollToPage:2];
+}
+
+- (void)thirdAreaVcNextHandlerWith:(NSString *)areaName itemId:(NSNumber *)itemId save:(BOOL)save {
+    
+    __weak typeof(self) weakSelf = self;
+    
+    weakSelf.thirdAreaBtn.selected = YES;
+    [weakSelf.thirdAreaBtn setTitle:areaName forState:UIControlStateNormal];
+
+    weakSelf.lastView = weakSelf.thirdAreaVc.view;
+        
+    [weakSelf.addressPickerView layoutIfNeeded];
+        
+    weakSelf.countryId = itemId;
+    
+    if (save) {
+        [weakSelf savedAddressLocation];
+    }
+    
+}
+
+- (void)fourthAreaVcNextHandlerWith:(NSString *)areaName itemId:(NSNumber *)itemId {
+
+    __weak typeof(self) weakSelf = self;
+    
+    weakSelf.fourthAreaBtn.selected = YES;
+    [weakSelf.fourthAreaBtn setTitle:areaName forState:UIControlStateNormal];
+    [weakSelf.addressPickerView layoutIfNeeded];
+    [weakSelf savedAddressLocation];
+    weakSelf.indicatorView.width = weakSelf.fourthAreaBtn.width;
+    
+    weakSelf.townId = itemId;
+    
+}
+
+#pragma mark - 懒加载
+-(KPButton *)maskBtn {
+    if (_maskBtn == nil) {
+        _maskBtn = [KPButton new];
+        [_maskBtn setBackgroundColor:[UIColor blackColor]];
+        _maskBtn.alpha = 0.8;
+        [_maskBtn addTarget:self action:@selector(clickCancelButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _maskBtn;
+}
+
+- (UIView *)addressPickerView {
+    if (_addressPickerView == nil) {
+        _addressPickerView = [UIView new];
+        _addressPickerView.backgroundColor = WhiteColor;
+    }
+    return _addressPickerView;
+}
+
+- (KPButton *)cancelBtn {
+    if (_cancelBtn == nil) {
+        _cancelBtn = [KPButton new];
+        [_cancelBtn setImage:[UIImage imageNamed:@"close"] forState:UIControlStateNormal];
+        [_cancelBtn addTarget:self action:@selector(clickCancelButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _cancelBtn;
+}
+
+- (UILabel *)titleLB {
+    if (_titleLB == nil) {
+        _titleLB = [UILabel new];
+        _titleLB.text = @"所在地区";
+        _titleLB.font = UIFont_17;
+        _titleLB.textColor = BlackColor;
+    }
+    return _titleLB;
+}
+
+- (UIScrollView *)scrollView {
+    if (_scrollView == nil) {
+        _scrollView = [UIScrollView new];
+        _scrollView.backgroundColor = HexColor(#555555);
+        _scrollView.bounces = NO;
+        _scrollView.showsHorizontalScrollIndicator = NO;
+        _scrollView.showsVerticalScrollIndicator = NO;
+        _scrollView.pagingEnabled = YES;
+        _scrollView.delegate = self;
+    }
+    return _scrollView;
+}
+
+- (KPAreaSelectedButton *)firstAreaBtn {
+    if (_firstAreaBtn == nil) {
+        _firstAreaBtn = [KPAreaSelectedButton areaSelectedButtonAreaName:@"请选择"];
+        [_firstAreaBtn addTarget:self action:@selector(clickFirstAreaButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _firstAreaBtn;
+}
+
+- (KPAreaSelectedButton *)secoundAreaBtn {
+    if (_secoundAreaBtn == nil) {
+        _secoundAreaBtn = [KPAreaSelectedButton areaSelectedButtonAreaName:@"请选择"];
+        _secoundAreaBtn.hidden = YES;
+        [_secoundAreaBtn addTarget:self action:@selector(clickSecoundAreaButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _secoundAreaBtn;
+}
+
+- (KPAreaSelectedButton *)thirdAreaBtn {
+    if (_thirdAreaBtn == nil) {
+        _thirdAreaBtn = [KPAreaSelectedButton areaSelectedButtonAreaName:@"请选择"];
+        _thirdAreaBtn.hidden = YES;
+        [_thirdAreaBtn addTarget:self action:@selector(clickThirdAreaButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _thirdAreaBtn;
+}
+
+- (KPAreaSelectedButton *)fourthAreaBtn {
+    if (_fourthAreaBtn == nil) {
+        _fourthAreaBtn = [KPAreaSelectedButton areaSelectedButtonAreaName:@"请选择"];
+        _fourthAreaBtn.hidden = YES;
+        [_fourthAreaBtn addTarget:self action:@selector(clickFourthAreaButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _fourthAreaBtn;
+}
+
+- (KPAreaListViewController *)firstAreaVc {
+    if (_firstAreaVc == nil) {
+        _firstAreaVc = [KPAreaListViewController new];
+        __weak typeof(self) weakSelf = self;
+        [_firstAreaVc setNextHandler:^(NSString *areaName, NSNumber *itemId) {
+            weakSelf.secoundAreaVc.areaModel = nil;
+            weakSelf.thirdAreaVc.areaModel = nil;
+            [weakSelf firstAreaVcNextHandlerWith:areaName itemId:itemId];
+        }];
+        
+        _firstAreaVc.parentId = 0;
+        _firstAreaVc.deep = 1;
+        
+    }
+    return _firstAreaVc;
+}
+
+- (KPAreaListViewController *)secoundAreaVc {
+    if (_secoundAreaVc == nil) {
+        _secoundAreaVc = [KPAreaListViewController new];
+        __weak typeof(self) weakSelf = self;
+        [_secoundAreaVc setNextHandler:^(NSString *areaName, NSNumber *itemId) {
+            weakSelf.thirdAreaVc.areaModel = nil;
+            [weakSelf secoundAreaVcNextHandlerWith:areaName itemId:itemId];
+        }];
+        
+        _secoundAreaVc.deep = 2;
+    }
+    return _secoundAreaVc;
+}
+
+- (KPAreaListViewController *)thirdAreaVc {
+    if (_thirdAreaVc == nil) {
+        _thirdAreaVc = [KPAreaListViewController new];
+        __weak typeof(self) weakSelf = self;
+        [_thirdAreaVc setNextHandler:^(NSString *areaName, NSNumber *itemId) {
+            weakSelf.fourthAreaVc.areaModel = nil;
+            [weakSelf thirdAreaVcNextHandlerWith:areaName itemId:itemId save:YES];
+        }];
+        
+        _thirdAreaVc.deep = 3;
+    }
+    return _thirdAreaVc;
+}
+
+- (KPAreaListViewController *)fourthAreaVc {
+    if (_fourthAreaVc == nil) {
+        _fourthAreaVc = [KPAreaListViewController new];
+        __weak typeof(self) weakSelf = self;
+        [_fourthAreaVc setNextHandler:^(NSString *areaName, NSNumber *itemId) {
+            [weakSelf fourthAreaVcNextHandlerWith:areaName itemId:itemId];
+        }];
+    }
+    return _fourthAreaVc;
+}
+
+- (UIView *)indicatorView {
+    if (_indicatorView == nil) {
+        _indicatorView = [UIView new];
+        _indicatorView.backgroundColor = LightRedColor;
+    }
+    return _indicatorView;
+}
+
+@end

@@ -1,0 +1,224 @@
+//
+//  KPOrderDetailViewModel.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/10.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPOrderDetailViewModel.h"
+#import "Singleton.h"
+#import "KPOrderModel.h"
+
+// cell
+#import "KPOrderCommitAddressInfoCell.h"
+#import "KPOrderCommitGoodInfoCell.h"
+#import "KPPaymentCell.h"
+#import "KPPriceCell.h"
+#import "KPOrderNumberCell.h"
+
+// headerView
+#import "KPSeparatorSectionFooterView.h"
+#import "KPSeparatorSectionHeaderView.h"
+#import "KPVendorSectionHeaderView.h"
+
+@interface KPOrderDetailViewModel ()
+
+@property (nonatomic, assign) NSInteger paymentIndex;
+
+@property (nonatomic, assign) NSInteger priceIndex;
+
+@property (nonatomic, strong) KPOrderModel *orderModel;
+
+@property (nonatomic, strong) NSMutableArray<KPVendorModel *> *vendors;
+
+@property (nonatomic, strong) KPAddressModel *defaultReceiver;
+
+@end
+
+@implementation KPOrderDetailViewModel
+
+- (void)setOrderDetail:(id)orderDetail {
+    _orderDetail = orderDetail;
+
+    KPOrderDetailModel *orderDetailModel = [KPOrderDetailModel mj_objectWithKeyValues:orderDetail];
+
+    self.vendors = [NSMutableArray arrayWithArray:orderDetailModel.stores];
+
+    __weak typeof(self) weakSelf = self;
+    [self.vendors enumerateObjectsUsingBlock:^(KPVendorModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (obj.items.count == 0) {
+            [weakSelf.vendors removeObject:obj];
+        }
+    }];
+
+    self.orderModel = orderDetailModel.order;
+    self.defaultReceiver = orderDetailModel.receiver;
+    self.paymentTag = orderDetailModel.order.paymentTag.integerValue;
+
+}
+
+- (void)setOrderModel:(KPOrderModel *)orderModel {
+    _orderModel = orderModel;
+    self.orderAddTime = orderModel.addTime;
+    self.orderState = orderModel.orderState;
+    self.totalPrice = orderModel.orderTotalprice;
+}
+
+#pragma mark - 公共方法
+- (UITableViewCell *)cellForRowAtIndexPath:(NSIndexPath *)indexPath tableView:(UITableView *)tableView {
+    
+    KPBaseTableViewCell *cell = nil;
+    
+    if (indexPath.section == 0) {
+        
+        KPOrderNumberCell *orderNumCell = [KPOrderNumberCell cellWithTableView:tableView];
+        orderNumCell.orderSn = self.orderModel.orderSn;
+        orderNumCell.orderState = self.orderModel.orderState;
+        cell = orderNumCell;
+        
+    }else if (indexPath.section == 1) {
+        
+        KPOrderCommitAddressInfoCell *addressCell = [KPOrderCommitAddressInfoCell cellWithTableView:tableView];
+        cell = addressCell;
+        addressCell.model = self.defaultReceiver;
+        addressCell.indicatorHidden = YES;
+        
+    }else if (indexPath.section == self.paymentIndex) {
+        
+        KPPaymentCell *paymentCell = [KPPaymentCell cellWithTableView:tableView];
+        cell = paymentCell;
+        paymentCell.paymentTag = self.paymentTag;
+
+        if (self.orderState.integerValue == 10) {
+            paymentCell.changeEnable = YES;
+        }else {
+            paymentCell.changeEnable = NO;
+        }
+        
+    }else if (indexPath.section == self.priceIndex) {
+        
+        KPPriceCell *priceCell = [KPPriceCell cellWithTableView:tableView];
+        cell = priceCell;
+        priceCell.totalPrice = self.orderModel.orderTotalprice.floatValue;
+        priceCell.freight = 0;
+    }else {
+        
+        KPOrderCommitGoodInfoCell *goodCell = [KPOrderCommitGoodInfoCell cellWithTableView:tableView];
+        goodCell.model = self.vendors[indexPath.section-2].items[indexPath.row];
+        cell = goodCell;
+        
+        if (indexPath.row < [self numberOfRowsInSection:indexPath.section] - 1) {
+            goodCell.showBottomSep = YES;
+        }else {
+            goodCell.showBottomSep = NO;
+        }
+        
+    }
+    
+    cell.accessoryType = UITableViewCellAccessoryNone;
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    return cell;
+}
+
+- (NSInteger)numberOfSections {
+    
+    if (self.vendors.count == 0) {
+        return 0;
+    }
+    
+    return self.vendors.count + 4;
+}
+
+- (NSInteger)numberOfRowsInSection:(NSInteger)section {
+    
+    if (section == 0 || section == 1 || section == self.paymentIndex || section == self.priceIndex) {
+        return 1;
+    }
+    
+    return self.vendors[section-2].items.count;
+}
+
+- (CGFloat)heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    if (indexPath.section == 0) {
+        return [KPOrderNumberCell cellHeight];
+    }
+    
+    if (indexPath.section == 1) {
+        return [KPOrderCommitAddressInfoCell cellHeight];
+    }
+    
+    if (indexPath.section == self.paymentIndex) {
+        return [KPPaymentCell cellHeight];
+    }
+    
+    if (indexPath.section == self.priceIndex) {
+        return [KPPriceCell cellHeight];
+    }
+    
+    return [KPOrderCommitGoodInfoCell cellHeight];
+}
+
+- (UIView *)viewForHeaderInSection:(NSInteger)section tableView:(UITableView *)tableView {
+    
+    if (section == 0 || section == 1 || section == self.paymentIndex || section == self.priceIndex) {
+        return [KPSeparatorSectionHeaderView headerViewWithTableView:tableView];
+    }
+    
+    KPVendorSectionHeaderView *vendorHeaderView = [KPVendorSectionHeaderView headerViewWithTableView:tableView];
+    vendorHeaderView.vendorModel = self.vendors[section-2];
+
+    if (self.orderState.integerValue == KPOrderStateUnReceive || self.orderState.integerValue == KPOrderStateFinish) {
+        vendorHeaderView.showLogisticsInfo = YES;
+    }else {
+        vendorHeaderView.showLogisticsInfo = NO;
+    }
+
+    return vendorHeaderView;
+}
+
+- (CGFloat)heightForHeaderInSection:(NSInteger)section {
+    
+    if (section == 1 || section == self.paymentIndex || section == self.priceIndex) {
+        return [KPSeparatorSectionHeaderView headerViewHeight];
+    }
+    
+    if (section == 0) {
+        return 0.000001;
+    }
+    
+    return [KPVendorSectionHeaderView headerViewHeight];
+}
+
+- (UIView *)viewForFooterInSection:(NSInteger)section tableView:(UITableView *)tableView {
+    
+    if (section == [self numberOfSections] - 1) {
+        return [KPSeparatorSectionFooterView footerViewWithTableView:tableView];
+    }
+    
+    return [KPSeparatorView new];
+}
+
+- (CGFloat)heightForFooterInSection:(NSInteger)section {
+    
+    if (section == [self numberOfSections] - 1) {
+        return 14;
+    }
+    
+    return 1;
+}
+
+#pragma mark - 懒加载
+- (NSInteger)paymentIndex {
+    return [self numberOfSections] - 2;
+}
+
+- (NSInteger)priceIndex {
+    return [self numberOfSections] - 1;
+}
+
+
+singleton_implementation(ViewModel)
+
+@end

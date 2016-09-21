@@ -1,0 +1,84 @@
+//
+//  KPProfileTableViewCell.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/3.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPProfileTableViewCell.h"
+#import "KPProfileItem.h"
+#import "KPProfileItemData.h"
+
+#define SubViews self.contentView.subviews
+
+@implementation KPProfileTableViewCell
+
++ (instancetype)cellWithTable:(UITableView *)table
+{
+    static NSString *profileTableViewCell = @"profileTableViewCell";
+    KPProfileTableViewCell *cell = [table dequeueReusableCellWithIdentifier:profileTableViewCell];
+    if (cell == nil) {
+        cell = [[KPProfileTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:profileTableViewCell];
+    }
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    return cell;
+}
+
+- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier
+{
+    if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
+        for (int i = 0; i < 4 ; i++) {
+            KPProfileItem *item = [[KPProfileItem alloc] init];
+            [self.contentView addSubview:item];
+        }
+    }
+    
+    return self;
+}
+
+
+- (void)setRowData:(KPProfileRowData *)rowData
+{
+    _rowData = rowData;
+    
+    NSUInteger count = SubViews.count;
+    for (int i = 0; i < count ; i++) {
+        KPProfileItemData *itemData = rowData.items[i];
+        KPProfileItem *item = SubViews[i];
+        item.imgView.image = [UIImage imageNamed:itemData.img];
+        item.title.text = itemData.title;
+        item.badgeValue = itemData.badgeValue;
+    }
+}
+
+- (void)setSection:(NSUInteger)section
+{
+    _section = section;
+    
+    KPProfileItem *item = SubViews[3];
+    item.lineImage.hidden = NO;
+    [item.bageView removeFromSuperview];
+    
+    if (section == 1) {
+        KPProfileItem *item2 = SubViews[2];
+        item2.title.textColor = BlackColor;
+        KPProfileItem *item3 = SubViews[3];
+        item3.title.textColor = GrayColor;
+    }
+    
+}
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    
+    NSUInteger count = SubViews.count;
+    CGFloat itemW = SCREEN_W / count;
+    CGFloat itemH = 75;
+    
+    for (int i = 0; i < count; i++) {
+        KPProfileItem *item = SubViews[i];
+        item.frame = CGRectMake(i * itemW, 0, itemW, itemH);
+    }
+}
+@end

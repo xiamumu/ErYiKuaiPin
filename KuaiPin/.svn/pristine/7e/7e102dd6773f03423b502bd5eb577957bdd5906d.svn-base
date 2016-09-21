@@ -1,0 +1,22 @@
+//
+//  KPGoodsDetailResult.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/6/1.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPGoodsDetailResult.h"
+
+@implementation KPGoodsDetailResult
++ (NSDictionary *)mj_replacedKeyFromPropertyName
+{
+    return @{@"productId": @"id"};
+}
+
++ (NSDictionary *)mj_objectClassInArray
+{
+    return @{@"specList": @"KPSpecList"};
+}
+
+@end

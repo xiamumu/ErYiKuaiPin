@@ -1,0 +1,54 @@
+//
+//  KPNewVersionTool.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/7/14.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPNewVersionTool.h"
+
+@implementation KPNewVersionTool
+
++ (void)getNewVersion
+{
+    
+    [KPNetworkingTool GetNewVersionSuccess:^(id result) {
+        
+        if ([result[@"resultCount"] integerValue] == 1) {
+            
+            [KPNetworkingTool GetNewVersionTypeSuccess:^(id newResult) {
+                
+                if (CODE != 0 ) return ;
+
+                NSString *newVersion = [result[@"results"] firstObject][@"version"];
+                NSString *message = [result[@"results"] firstObject][@"releaseNotes"];
+                NSString *trackViewUrl = [result[@"results"] firstObject][@"trackViewUrl"];
+                
+                // 屏蔽苹果审核员看到此更新提示口
+                if ([newVersion isEqualToString:@"1.2.4"])   return;
+                
+                // 获得当前打开软件的版本号
+                NSString *currentVersion = [NSBundle mainBundle].infoDictionary[@"CFBundleShortVersionString"];
+                
+                NSString *cancelTitle = [newResult[@"data"][@"isForciblyUpdate"] integerValue] == 0 ? @"下次吧" : nil;
+                
+                // 针对新下载用户如果是第一次下载 不会走里面代码。如果是老用户就会走里面代码
+                if (![newVersion isEqualToString:currentVersion]) {
+                    
+                    [KPAlertController alertControllerWithTitle:@"重大更新"
+                                                        message:message
+                                                    cancelTitle:cancelTitle
+                                                   defaultTitle:@"马上更新"
+                                                        handler:^(UIAlertAction *alert) {
+                                                            
+                                                            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:trackViewUrl]];
+                                                        }];
+                }
+                
+            } failure:^(NSError *error) { }];
+        }
+    } failure:^(NSError *error) { }];
+}
+
+@end

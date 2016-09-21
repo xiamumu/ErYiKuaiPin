@@ -1,0 +1,53 @@
+//
+//  KPPayBackDetailCell.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/11.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPPayBackDetailCell.h"
+#import "KPPayBackDetailContentView.h"
+
+@interface KPPayBackDetailCell ()
+
+@property (nonatomic, weak) KPPayBackDetailContentView *payBackDetailContentView;
+
+@end
+
+@implementation KPPayBackDetailCell
+
++ (instancetype)cellWithTable:(UITableView *)table
+{
+    static NSString *payBackDetailCell = @"payBackDetailCell";
+    KPPayBackDetailCell *cell = [table dequeueReusableCellWithIdentifier:payBackDetailCell];
+    if (cell == nil) {
+        cell = [[KPPayBackDetailCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:payBackDetailCell];
+    }
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    return cell;
+}
+
+- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier
+{
+    if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
+        
+        KPPayBackDetailContentView *payBackDetailContentView = [[KPPayBackDetailContentView alloc] init];
+        [self.contentView addSubview:payBackDetailContentView];
+        self.payBackDetailContentView = payBackDetailContentView;
+        
+        __weak typeof (self) weakSelf = self;
+        [self.payBackDetailContentView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.edges.mas_equalTo(weakSelf);
+        }];
+    }
+    return self;
+}
+
+- (void)setOrderItem:(KPOrderItem *)orderItem
+{
+    _orderItem = orderItem;
+    self.payBackDetailContentView.orderItem = orderItem;
+}
+
+@end

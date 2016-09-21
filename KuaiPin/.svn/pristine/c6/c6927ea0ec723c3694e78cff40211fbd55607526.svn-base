@@ -1,0 +1,116 @@
+//
+//  KPSingleChooseView.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/7/13.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPSingleChooseView.h"
+#import "KPSpecValue.h"
+
+@interface KPSingleChooseView ()
+
+@property (nonatomic, weak) UILabel *titleLab;
+
+@property (nonatomic, weak) KPButton *selectedBtn;
+
+@end
+
+@implementation KPSingleChooseView
+
+- (void)setTitle:(NSString *)title
+{
+    _title = [title copy];
+    
+    UILabel *titleLab = [UILabel addLabelWithTitle:title textColor:BlackColor font:UIFont_14];
+    titleLab.frame = CGRectMake(5, CommonMargin, 80, 20);
+    [self addSubview:titleLab];
+    self.titleLab = titleLab;
+}
+
+- (void)setSpecValues:(NSArray<KPSpecValue *> *)specValues
+{
+    _specValues = specValues;
+    
+//    WHYNSLog(@"======%@=========", specValues);
+    
+    NSArray *subTitles = [specValues valueForKeyPath:@"spValueName"];
+    
+    NSUInteger count = subTitles.count;
+    
+    CGFloat chooseBtn_H = 25;
+    CGFloat chooseBtn_W = 70;
+    
+    CGFloat margin = ((NSUInteger)SCREEN_W % (NSUInteger)(chooseBtn_W + CommonMargin)) / 2;
+    
+    NSUInteger rowCount = floor((SCREEN_W - margin * 2) / (chooseBtn_W + CommonMargin));
+    
+    for (int i = 0; i < count ; i++) {
+        
+        KPSpecValue *specValut = specValues[i];
+        
+        // 列数
+        NSUInteger col = i % rowCount;
+        // 行数
+        NSUInteger row = i / rowCount;
+        
+        CGFloat chooseBtn_X = margin + (chooseBtn_W + CommonMargin) * col;
+        CGFloat chooseBtn_Y = CGRectGetMaxY(self.titleLab.frame) + 5 + (chooseBtn_H + CommonMargin) * row;
+        
+        KPButton *chooseBtn = [self addBtnWithTitle:specValut.spValueName];
+        [chooseBtn addTarget:self action:@selector(chooseBtnAction:) forControlEvents:UIControlEventTouchUpInside];
+        chooseBtn.frame = CGRectMake(chooseBtn_X, chooseBtn_Y, chooseBtn_W, chooseBtn_H);
+        [self addSubview:chooseBtn];
+        
+        if (i == 0) {
+            [self chooseBtnAction:chooseBtn];
+        }
+        
+        if (i == count - 1) {
+            
+            [self mas_makeConstraints:^(MASConstraintMaker *make) {
+                make.bottom.mas_equalTo(chooseBtn.mas_bottom).offset(margin);
+            }];
+        }
+    }
+    
+}
+
+- (void)chooseBtnAction:(KPButton *)chooseBtn
+{
+    self.selectedBtn.layer.borderColor = GrayColor.CGColor;
+    self.selectedBtn.selected = NO;
+    chooseBtn.selected = YES;
+    self.selectedBtn = chooseBtn;
+    self.selectedBtn.layer.borderColor = OrangeColor.CGColor;
+    
+    NSString *chooseName = chooseBtn.titleLabel.text;
+    
+    NSArray *subTitles = [self.specValues valueForKeyPath:@"spValueName"];
+    
+    for (NSString *titleName in subTitles) {
+        if ([titleName isEqualToString:chooseName]) {
+            
+            KPSpecValue *specValue = self.specValues[[subTitles indexOfObject:chooseName]];
+            WHYNSLog(@"------%@-----", specValue.spId);
+//            NSPostNote(Noti_ChooseName, chooseName)
+        }
+    }
+}
+
+
+- (KPButton *)addBtnWithTitle:(NSString *)title
+{
+    KPButton *btn = [[KPButton alloc] init];
+    [btn setTitle:title forState:UIControlStateNormal];
+    [btn setTitleColor:GrayColor forState:UIControlStateNormal];
+    [btn setTitleColor:OrangeColor forState:UIControlStateSelected];
+    btn.titleLabel.font = UIFont_15;
+    btn.layer.borderWidth = 1;
+    btn.layer.borderColor = GrayColor.CGColor;
+    btn.layer.cornerRadius = 5;
+    return btn;
+}
+
+@end

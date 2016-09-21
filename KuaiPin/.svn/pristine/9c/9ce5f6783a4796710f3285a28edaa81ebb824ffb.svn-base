@@ -1,0 +1,37 @@
+//
+//  KPPayBackRowData.h
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/10.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+typedef enum : NSUInteger {
+    KPPayBackOrderTypeUnPayBack,
+    KPPayBackOrderTypeCanPayBack,
+    KPPayBackOrderTypeFinishPayBack,
+} KPPayBackOrderType;
+
+@interface KPPayBackOrder : NSObject
+
+/***  订单号 */
+@property (nonatomic, copy) NSString *orderSn;
+/***  订单支付时间 */
+@property (nonatomic, copy) NSString *paymentTime;
+/***  贴现开始时间 */
+@property (nonatomic, copy) NSString *payBackBeginTime;
+/***  贴现时间 */
+@property (nonatomic, copy) NSString *payBackTime;
+/***  贴现金额 */
+@property (nonatomic, copy) NSString *payBackMoney;
+/***  订单状态 */
+@property (nonatomic, copy) NSString *orderState;
+/***  订单贴现状态   未贴现、可贴现、已贴现 */
+@property (nonatomic, assign) NSUInteger payBackState;
+
+/***  贴现状态 */
+@property (nonatomic, copy) NSString *isDiscount;
+
+@end

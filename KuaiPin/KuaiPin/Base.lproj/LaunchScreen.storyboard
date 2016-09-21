@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10117" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="01J-lp-oVM">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="EHf-IW-A2E">
+            <objects>
+                <viewController id="01J-lp-oVM" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="Llm-lL-Icb"/>
+                        <viewControllerLayoutGuide type="bottom" id="xb3-aO-Qok"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="udV-ij-FXF">
+                                <rect key="frame" x="0.0" y="518" width="600" height="82"/>
+                                <subviews>
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="kuaipin_slogen" translatesAutoresizingMaskIntoConstraints="NO" id="2yC-Ft-Qx4">
+                                        <rect key="frame" x="193" y="22" width="215" height="39"/>
+                                    </imageView>
+                                </subviews>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstItem="2yC-Ft-Qx4" firstAttribute="centerY" secondItem="udV-ij-FXF" secondAttribute="centerY" id="6mr-ry-Qah"/>
+                                    <constraint firstItem="2yC-Ft-Qx4" firstAttribute="centerX" secondItem="udV-ij-FXF" secondAttribute="centerX" id="8Qj-cj-xc2"/>
+                                    <constraint firstAttribute="height" constant="82" id="Zwj-g7-nya"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstAttribute="trailing" secondItem="udV-ij-FXF" secondAttribute="trailing" id="1Fe-qA-Omc"/>
+                            <constraint firstItem="udV-ij-FXF" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="Nx4-vd-UAa"/>
+                            <constraint firstAttribute="bottom" secondItem="udV-ij-FXF" secondAttribute="bottom" id="kEu-tG-xFC"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="53" y="375"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="kuaipin_slogen" width="215" height="39"/>
+    </resources>
+</document>

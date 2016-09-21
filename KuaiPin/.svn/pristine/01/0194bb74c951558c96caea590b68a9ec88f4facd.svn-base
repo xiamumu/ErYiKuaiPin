@@ -1,0 +1,69 @@
+//
+//  KPMessageButton.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/5.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPMessageButton.h"
+#import "KPBageView.h"
+
+@interface KPMessageButton ()
+
+@property (nonatomic, weak) KPBageView *bageView;
+
+@end
+
+@implementation KPMessageButton
++ (instancetype)messageButton
+{
+    return [[self alloc] init];
+}
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self setImage:[UIImage imageNamed:@"message"] forState:UIControlStateNormal];
+        [self setImage:[UIImage imageNamed:@"message_click"] forState:UIControlStateHighlighted];
+        
+        KPBageView *bageView = [KPBageView bageView];
+        bageView.selected = YES;
+        bageView.hidden = YES;
+        [self addSubview:bageView];
+        self.bageView = bageView;
+    }
+    return self;
+}
+
+- (void)setBadgeValue:(NSString *)badgeValue
+{
+    _badgeValue = [badgeValue copy];
+    if ([badgeValue integerValue] > 0) {
+        self.bageView.hidden = NO;
+    }
+    else
+    {
+        self.bageView.hidden = YES;
+    }
+}
+
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    self.bageView.width = 8;
+    self.bageView.height = 8;
+    self.bageView.centerX = CGRectGetMaxX(self.imageView.frame);
+    self.bageView.centerY = self.imageView.frame.origin.y;
+}
+
+- (CGRect)imageRectForContentRect:(CGRect)contentRect
+{
+    CGFloat X = self.width - self.currentImage.size.width;
+    CGFloat Y = (self.height - self.currentImage.size.height) * 0.5;
+    CGFloat W = self.currentImage.size.width;
+    CGFloat H = self.currentImage.size.height;
+    return CGRectMake(X, Y, W, H);
+}
+@end

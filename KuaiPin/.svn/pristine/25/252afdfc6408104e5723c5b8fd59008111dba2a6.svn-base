@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="10116" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="iN0-l3-epB" customClass="KPMySelfKeFuView">
+            <rect key="frame" x="0.0" y="0.0" width="375" height="54"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tsv-pj-ADs">
+                    <rect key="frame" x="0.0" y="0.0" width="375" height="54"/>
+                    <connections>
+                        <action selector="keFuTellAction:" destination="iN0-l3-epB" eventType="touchUpInside" id="o89-Rv-4Zn"/>
+                    </connections>
+                </button>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="客服电话：" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xty-AY-1X6">
+                    <rect key="frame" x="12" y="12" width="80" height="30"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="16"/>
+                    <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="my_nextarrow" translatesAutoresizingMaskIntoConstraints="NO" id="2x1-Ln-O4c">
+                    <rect key="frame" x="356" y="0.0" width="7" height="54"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="7" id="F94-Pq-zAr"/>
+                    </constraints>
+                </imageView>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="400-9921-365" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3zR-Vy-GwB">
+                    <rect key="frame" x="222" y="21" width="110" height="12"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="16"/>
+                    <color key="textColor" red="1" green="0.52244788659999997" blue="0.02940749367" alpha="1" colorSpace="calibratedRGB"/>
+                    <nil key="highlightedColor"/>
+                </label>
+            </subviews>
+            <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+            <constraints>
+                <constraint firstItem="2x1-Ln-O4c" firstAttribute="leading" secondItem="3zR-Vy-GwB" secondAttribute="trailing" constant="24" id="5j4-D4-vKJ"/>
+                <constraint firstItem="xty-AY-1X6" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="12" id="66u-fq-3aM"/>
+                <constraint firstItem="xty-AY-1X6" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="12" id="Bas-XJ-hqI"/>
+                <constraint firstAttribute="bottom" secondItem="2x1-Ln-O4c" secondAttribute="bottom" id="KDF-jT-IEd"/>
+                <constraint firstItem="3zR-Vy-GwB" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="21" id="R0J-3v-Fp1"/>
+                <constraint firstItem="tsv-pj-ADs" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="SE8-Ck-S7A"/>
+                <constraint firstAttribute="trailing" secondItem="2x1-Ln-O4c" secondAttribute="trailing" constant="12" id="lW9-w3-lg0"/>
+                <constraint firstItem="2x1-Ln-O4c" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="luf-di-cSl"/>
+                <constraint firstAttribute="bottom" secondItem="tsv-pj-ADs" secondAttribute="bottom" id="mxC-yM-Zvu"/>
+                <constraint firstAttribute="bottom" secondItem="xty-AY-1X6" secondAttribute="bottom" constant="12" id="nu7-Fc-Bi5"/>
+                <constraint firstItem="tsv-pj-ADs" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="r8J-UC-PrG"/>
+                <constraint firstAttribute="bottom" secondItem="3zR-Vy-GwB" secondAttribute="bottom" constant="21" id="rPL-3B-ilO"/>
+                <constraint firstAttribute="trailing" secondItem="tsv-pj-ADs" secondAttribute="trailing" id="uy4-42-rjj"/>
+            </constraints>
+            <nil key="simulatedStatusBarMetrics"/>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+        </view>
+    </objects>
+    <resources>
+        <image name="my_nextarrow" width="7" height="12"/>
+    </resources>
+</document>

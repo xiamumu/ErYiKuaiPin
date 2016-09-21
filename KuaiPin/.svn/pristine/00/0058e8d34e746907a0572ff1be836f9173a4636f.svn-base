@@ -1,0 +1,23 @@
+//
+//  KPSpecValue.h
+//  KuaiPin
+//
+//  Created by 21_xm on 16/7/12.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface KPSpecValue : NSObject
+
+/***  具体子选项 */
+@property (nonatomic, copy) NSString *spValueName;
+/***  具体子选项id */
+@property (nonatomic, copy) NSString *spId;
+@property (nonatomic, copy) NSString *ID;
+@property (nonatomic, copy) NSString *storeId;
+@property (nonatomic, copy) NSString *spValueSort;
+@property (nonatomic, copy) NSString *spValue;
+
+
+@end

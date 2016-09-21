@@ -1,0 +1,15 @@
+//
+//  KPEncrypt.h
+//  KPEncrypt
+//
+//  Created by 王洪运 on 16/8/22.
+//  Copyright © 2016年 王洪运. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface KPEncrypt : NSObject
+
+NSString *encryptWithParameter(id paramter);
+
+@end

@@ -1,0 +1,554 @@
+//
+//  KPSubsidizeCell.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/4/26.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPSubsidizeCell.h"
+#import "KPSelecteGoodButton.h"
+#import <YYText.h>
+#import "KPSoldoutView.h"
+
+@interface KPSubsidizeCell ()<UITextFieldDelegate>
+
+@property (nonatomic, assign) NSInteger num;
+
+@property (nonatomic, assign) NSInteger oldNum;
+
+@property (nonatomic, assign) NSInteger maxNum;
+
+@property (nonatomic, strong) KPSelecteGoodButton *selectedBtn;
+
+@property (nonatomic, strong) UIImageView *iconView;
+
+@property (nonatomic, strong) UILabel *titleLB;
+
+@property (nonatomic, strong) UILabel *priceLB;
+
+@property (nonatomic, strong) KPButton *numberBgView;
+
+@property (nonatomic, strong) KPButton *reduceBtn;
+
+@property (nonatomic, strong) KPButton *addBtn;
+
+@property (nonatomic, strong) UITextField *numberLB;
+
+@property (nonatomic, strong) KPGoodModel *goodModel;
+
+@property (nonatomic, strong) KPSeparatorView *bottomSep;
+
+@property (nonatomic, strong) KPButton *editeDone;
+
+@property (nonatomic, strong) KPButton *editCancel;
+
+@property (nonatomic, strong) UILabel *standardLB;
+
+@property (nonatomic, strong) KPSoldoutView *soldOutLB;
+
+@property (nonatomic, strong) KPButton *lookUpOtherBtn;
+
+@end
+
+@implementation KPSubsidizeCell
+
+- (void)setShowBottomSep:(BOOL)showBottomSep {
+    _showBottomSep = showBottomSep;
+    
+    self.bottomSep.hidden = !showBottomSep;
+}
+
+#pragma mark - UITextFieldDelegate
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    
+    WHYNSLog(@"%@", textField.text);
+    
+    if ([string isEqualToString:@""]) return YES;
+
+    if (string.isEmoji) return NO;
+
+    if ([string isEqualToString:@"\n"]) return NO;
+    
+    if (string.intValue < 0 || string.intValue > 9) return NO;
+    
+    if (textField.text.length > 1) return NO;
+    
+    return YES;
+}
+
+- (void)textFieldDidBeginEditing:(UITextField *)textField {
+    self.oldNum = self.num;
+//    WHYNSLog(@"%@", self);
+}
+
+#pragma mark - 类方法
++ (instancetype)cellWithTableView:(UITableView *)tableView {
+    
+    static NSString *const ID = @"KPSubsidizeCell";
+    
+    KPSubsidizeCell *cell = [tableView dequeueReusableCellWithIdentifier:ID];
+    if (cell == nil) {
+        cell = [[KPSubsidizeCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:ID];
+    }
+    
+    return cell;
+    
+}
+
++ (CGFloat)cellHeight {
+    return 121;
+}
+
+#pragma mark - 重写set方法
+- (void)setModel:(__kindof KPBaseModel *)model {
+    super.model = model;
+    self.goodModel = model;
+    
+    [self titleAttributedTextWithString:self.goodModel.productName];
+//    [self titleAttributedTextWithString:@"这是商品简介这是商品简介这是"];
+    
+    self.maxNum = (self.goodModel.virginUser.integerValue == 1) ? 1 : self.goodModel.maxNum;
+    self.num = self.goodModel.productAmount.integerValue;
+    self.numberLB.text = [NSString stringWithFormat:@"%zd",self.goodModel.productAmount.integerValue];
+    
+    [self.iconView sd_setImageWithURL:[NSURL URLWithString:self.goodModel.productImage]
+                     placeholderImage:[UIImage imageNamed:@"subsidizeGoods_Placeholder"]];
+    
+    self.selectedBtn.selected = self.goodModel.selected;
+
+    self.standardLB.text = self.goodModel.strSpec;
+
+    [self setSoldOut:!self.goodModel.selecteEnable];
+
+    self.priceLB.text = [NSString stringWithFormat:@"￥%.2f", [self.goodModel.productPrice floatValue]];
+    
+}
+
+- (void)setNum:(NSInteger)num {
+   
+    _num = num;
+    
+    if (num < 1) {
+        _num = 1;
+    }
+    
+    self.reduceBtn.enabled = (_num > 1) ? YES : NO;
+    self.addBtn.enabled = (_num < self.maxNum) ? YES : NO;
+    
+}
+
+#pragma mark - 重写父类get方法
+- (BOOL)isFirstResponder {
+    return self.numberLB.isFirstResponder;
+}
+
+#pragma mark - 点击事件
+- (void)lookUpOther {
+    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:2];
+    dict[PcIdKey] = self.goodModel.pcId1;
+    dict[PcIdNameKey] = self.goodModel.pcId1Name;
+    NSPostNoteWithUserInfo(Noti_LookUpOtherGood, nil, dict)
+}
+
+- (void)clickSelectedButton {
+
+    BOOL selected = !self.selectedBtn.selected;
+    
+    NSString *selectedState = nil;
+    
+    if (selected) {
+        selectedState = GoodSelectedStateSelected;
+    }else {
+        selectedState = GoodSelectedStateUnSelected;
+    }
+    
+//    WHYNSLog(@"%@", self.goodModel);
+    NSPostNoteWithUserInfo(Noti_SelectedGoodBtnAction, self.goodModel, @{GoodSelectedStateKey : selectedState})
+}
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    [super touchesBegan:touches withEvent:event];
+    [self.numberLB endEditing:YES];
+}
+
+- (void)clickReduceButton {
+    
+    NSInteger num = self.num - 1;
+    self.numberLB.text = [NSString stringWithFormat:@"%zd",num];
+
+    [self postChangeGoodNumActionWithNumber:num];
+    
+    [self.numberLB endEditing:YES];
+}
+
+- (void)clickAddButton {
+    
+    NSInteger num = self.num + 1;
+    self.numberLB.text = [NSString stringWithFormat:@"%zd",num];
+
+    [self postChangeGoodNumActionWithNumber:num];
+    
+    [self.numberLB endEditing:YES];
+}
+
+- (void)numberTextFieldEditeDone {
+    [self.numberLB endEditing:YES];
+    
+    if (self.numberLB.text.length == 0) {
+        [self postChangeGoodNumActionWithNumber:1];
+        return;
+    }
+
+    [self postChangeGoodNumActionWithNumber:self.num];
+
+}
+
+- (void)numberTextFieldEditeCancel {
+    self.num = self.oldNum;
+    self.numberLB.text = [NSString stringWithFormat:@"%zd", self.num];
+    [self.numberLB endEditing:YES];
+}
+
+#pragma mark - 初始化
+-(instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
+    if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
+        [self setupUI];
+        
+        self.selectionStyle = UITableViewCellSelectionStyleNone;
+
+    }
+    return self;
+}
+
+#pragma mark - 私有方法
+- (void)postChangeGoodNumActionWithNumber:(NSInteger)number {
+    NSPostNoteWithUserInfo(Noti_ChangeGoodNumAction,
+                           self.goodModel,
+                           (@{GoodSelectedStateKey : GoodSelectedStateSelected,
+                              GoodNumberKey : @(number),
+                              GoodIdKey : self.goodModel.productId,
+                              GoodSpecIdKey : self.goodModel.productSpecId
+                              }));
+}
+
+- (NSString *)getSpecIds {
+    return  [NSString stringWithFormat:@"%@,%@,%@", self.goodModel.spec1, self.goodModel.spec2, self.goodModel.spec3];
+}
+
+- (void)setSoldOut:(BOOL)isSoldOut {
+
+    self.numberLB.hidden = isSoldOut;
+    self.numberBgView.hidden = isSoldOut;
+    self.addBtn.hidden = isSoldOut;
+    self.reduceBtn.hidden = isSoldOut;
+
+    self.soldOutLB.hidden = !isSoldOut;
+    self.lookUpOtherBtn.hidden = !isSoldOut;
+    self.priceLB.textColor = !isSoldOut ? LightRedColor : GrayColor;
+
+    self.selectedBtn.enabled = !isSoldOut;
+
+}
+
+-(void)setupUI {
+    
+    self.backgroundColor = WhiteColor;
+
+    [self addSubview:self.iconView];
+    [self addSubview:self.titleLB];
+    [self addSubview:self.priceLB];
+    [self addSubview:self.selectedBtn];
+    [self addSubview:self.numberBgView];
+    [self addSubview:self.reduceBtn];
+    [self addSubview:self.numberLB];
+    [self addSubview:self.addBtn];
+    [self addSubview:self.bottomSep];
+    [self addSubview:self.standardLB];
+    [self addSubview:self.soldOutLB];
+    [self addSubview:self.lookUpOtherBtn];
+
+//    self.standardLB.hidden = YES;
+
+    __weak typeof(self) weakSelf = self;
+    CGFloat selectedWH = 35;
+    [self.selectedBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf);
+        make.centerY.mas_equalTo(weakSelf);
+        make.width.height.mas_equalTo(selectedWH);
+    }];
+    
+    CGFloat iconW = 101;
+    CGFloat iconH = 101;
+    CGFloat iconTopMargin = 10;
+    [self.iconView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.selectedBtn.mas_right);
+        make.top.mas_equalTo(weakSelf).offset(iconTopMargin);
+        make.width.mas_equalTo(iconW);
+        make.height.mas_equalTo(iconH);
+    }];
+    
+    CGFloat titleRight = 9;
+    CGFloat titleLeft = 7;
+    CGFloat titleTopMargin = 12;
+    CGFloat titleH = 42;
+    [self.titleLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.iconView.mas_right).offset(titleLeft);
+        make.top.mas_equalTo(weakSelf).offset(titleTopMargin);
+        make.right.mas_equalTo(weakSelf).offset(-titleRight);
+        make.height.mas_equalTo(titleH);
+    }];
+
+    CGFloat standardH = 16;
+    CGFloat standardTop = 12;
+    [self.standardLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.titleLB);
+        make.top.mas_equalTo(weakSelf.titleLB.mas_bottom).offset(standardTop);
+        make.height.mas_equalTo(standardH);
+    }];
+    
+    CGFloat numberBgLeftMargin = titleRight;
+    CGFloat numberBgBottomMargin = 10;
+    CGFloat numberBgW = 78;
+    CGFloat numberBgH = 24;
+    [self.numberBgView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(weakSelf).offset(-numberBgLeftMargin);
+        make.bottom.mas_equalTo(weakSelf).offset(-numberBgBottomMargin);
+        make.width.mas_equalTo(numberBgW);
+        make.height.mas_equalTo(numberBgH);
+    }];
+    
+    CGFloat numberW = 29;
+    [self.numberLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.mas_equalTo(weakSelf.numberBgView);
+        make.top.bottom.mas_equalTo(weakSelf.numberBgView);
+        make.width.mas_equalTo(numberW);
+    }];
+    
+    [self.reduceBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.top.bottom.mas_equalTo(weakSelf.numberBgView);
+        make.right.mas_equalTo(weakSelf.numberLB.mas_left);
+    }];
+    
+    [self.addBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.right.bottom.mas_equalTo(weakSelf.numberBgView);
+        make.left.mas_equalTo(weakSelf.numberLB.mas_right);
+    }];
+
+    [self.priceLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.titleLB);
+        make.centerY.mas_equalTo(weakSelf.numberBgView);
+    }];
+    
+    CGFloat bottomH = 1;
+    CGFloat left = 9;
+    [self.bottomSep mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf).offset(left);
+        make.right.bottom.mas_equalTo(weakSelf);
+        make.height.mas_equalTo(bottomH);
+    }];
+    
+    UIView *tool = [[UIView alloc] initWithFrame:CGRectMake(0, 0, SCREEN_W, 30)];
+    tool.backgroundColor = ViewBgColor;
+    self.numberLB.inputAccessoryView = tool;
+    
+    KPSeparatorView *toolSep = [KPSeparatorView new];
+    
+    [tool addSubview:toolSep];
+    [tool addSubview:self.editCancel];
+    [tool addSubview:self.editeDone];
+    
+    [toolSep mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.top.right.mas_equalTo(tool);
+        make.height.mas_equalTo(bottomH);
+    }];
+    
+    [self.editCancel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(tool).offset(left);
+        make.top.bottom.mas_equalTo(tool);
+    }];
+    
+    [self.editeDone mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(tool).offset(-left);
+        make.top.bottom.mas_equalTo(tool);
+    }];
+
+    CGFloat soldOutH = 40;
+    [self.soldOutLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.bottom.width.mas_equalTo(weakSelf.iconView);
+        make.height.mas_equalTo(soldOutH);
+    }];
+
+    CGFloat lookUpBtnW = 64;
+    CGFloat lookUpBtnH = 22;
+    [self.lookUpOtherBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(weakSelf.titleLB);
+        make.bottom.mas_equalTo(weakSelf.numberBgView);
+        make.width.mas_equalTo(lookUpBtnW);
+        make.height.mas_equalTo(lookUpBtnH);
+    }];
+    
+}
+
+- (void)titleAttributedTextWithString:(NSString *)string {
+    NSMutableAttributedString *attrStr = [[NSMutableAttributedString alloc] initWithString:string];
+    attrStr.yy_lineSpacing = 6;
+    attrStr.yy_lineBreakMode = NSLineBreakByTruncatingTail;
+    attrStr.yy_headIndent = 0;
+    attrStr.yy_tailIndent = 0;
+    self.titleLB.attributedText = [attrStr copy];
+}
+
+- (void)changedProductNumber {
+    
+    if (self.numberLB.text.length == 0) {
+        
+    }
+    
+    self.num = [self.numberLB.text integerValue];
+//    WHYNSLog(@"%zd", self.num);
+
+}
+
+#pragma mark - 重写父类方法
+- (void)dealloc {
+    NSRemoveObserver
+}
+
+#pragma mark - 懒加载
+- (KPSelecteGoodButton *)selectedBtn {
+    if (_selectedBtn == nil) {
+        _selectedBtn = [KPSelecteGoodButton selecteGoodButtonWithType:KPSelecteGoodButtonTypeSelectedGood];
+        [_selectedBtn addTarget:self action:@selector(clickSelectedButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _selectedBtn;
+}
+
+- (UIImageView *)iconView {
+    if (_iconView == nil) {
+        _iconView = [UIImageView new];
+        _iconView.backgroundColor = RandomColor;
+    }
+    return _iconView;
+}
+
+- (UILabel *)titleLB {
+    if (_titleLB == nil) {
+        _titleLB = [UILabel new];
+        _titleLB.font = UIFont_15;
+        _titleLB.textColor = BlackColor;
+        _titleLB.numberOfLines = 2;
+        _titleLB.preferredMaxLayoutWidth = 214;
+    }
+    return _titleLB;
+}
+
+- (UILabel *)priceLB {
+    if (_priceLB == nil) {
+        _priceLB = [UILabel new];
+        _priceLB.font = UIFont_16;
+        _priceLB.textColor = LightRedColor;
+    }
+    return _priceLB;
+}
+
+- (KPButton *)numberBgView {
+    if (_numberBgView == nil) {
+        _numberBgView = [KPButton new];
+        [_numberBgView setBackgroundImage:[UIImage imageNamed:@"cart_numberbg"] forState:UIControlStateNormal];
+    }
+    return _numberBgView;
+}
+
+- (KPButton *)reduceBtn {
+    if (_reduceBtn == nil) {
+        _reduceBtn = [KPButton new];
+        [_reduceBtn setImage:[UIImage imageNamed:@"cart_num_minus_select"] forState:UIControlStateNormal];
+        [_reduceBtn setImage:[UIImage imageNamed:@"cart_num_minus_unselect"] forState:UIControlStateDisabled];
+        [_reduceBtn addTarget:self action:@selector(clickReduceButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _reduceBtn;
+}
+
+- (UITextField *)numberLB {
+    if (_numberLB == nil) {
+        _numberLB = [UITextField new];
+        _numberLB.textAlignment = NSTextAlignmentCenter;
+        _numberLB.font = UIFont_13;
+        _numberLB.textColor = BlackColor;
+        _numberLB.delegate = self;
+        _numberLB.keyboardType = UIKeyboardTypeNumberPad;
+        [_numberLB addTarget:self action:@selector(changedProductNumber) forControlEvents:UIControlEventEditingChanged];
+    }
+    return _numberLB;
+}
+
+- (KPButton *)addBtn {
+    if (_addBtn == nil) {
+        _addBtn = [KPButton new];
+        [_addBtn setImage:[UIImage imageNamed:@"cart_number_plus_select"] forState:UIControlStateNormal];
+        [_addBtn setImage:[UIImage imageNamed:@"cart_number_plus_unselect"] forState:UIControlStateDisabled];
+        [_addBtn addTarget:self action:@selector(clickAddButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _addBtn;
+}
+
+- (KPSeparatorView *)bottomSep {
+    if (_bottomSep == nil) {
+        _bottomSep = [KPSeparatorView new];
+    }
+    return _bottomSep;
+}
+
+- (KPButton *)editeDone {
+    if (_editeDone == nil) {
+        _editeDone = [KPButton new];
+        _editeDone.titleLabel.font = UIFont_14;
+        [_editeDone setTitleColor:BlackColor forState:UIControlStateNormal];
+        [_editeDone setTitle:@"完成" forState:UIControlStateNormal];
+        [_editeDone addTarget:self action:@selector(numberTextFieldEditeDone) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _editeDone;
+}
+
+- (KPButton *)editCancel {
+    if (_editCancel == nil) {
+        _editCancel = [KPButton new];
+        _editCancel.titleLabel.font = UIFont_14;
+        [_editCancel setTitleColor:BlackColor forState:UIControlStateNormal];
+        [_editCancel setTitle:@"取消" forState:UIControlStateNormal];
+        [_editCancel addTarget:self action:@selector(numberTextFieldEditeCancel) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _editCancel;
+}
+
+- (UILabel *)standardLB {
+    if (_standardLB == nil) {
+        _standardLB = [UILabel new];
+        _standardLB.font = UIFont_14;
+        _standardLB.textColor = GrayColor;
+    }
+    return _standardLB;
+}
+
+- (KPSoldoutView *)soldOutLB {
+    if (_soldOutLB == nil) {
+        _soldOutLB = [KPSoldoutView new];
+    }
+    return _soldOutLB;
+}
+
+- (KPButton *)lookUpOtherBtn {
+    if (_lookUpOtherBtn == nil) {
+        _lookUpOtherBtn = [KPButton new];
+        _lookUpOtherBtn.backgroundColor = OrangeColor;
+        [_lookUpOtherBtn setTitleColor:WhiteColor forState:UIControlStateNormal];
+        [_lookUpOtherBtn setTitle:@"查看其他" forState:UIControlStateNormal];
+        [_lookUpOtherBtn addTarget:self action:@selector(lookUpOther) forControlEvents:UIControlEventTouchUpInside];
+        _lookUpOtherBtn.layer.cornerRadius = 6;
+        _lookUpOtherBtn.titleLabel.font = UIFont_12;
+    }
+    return _lookUpOtherBtn;
+}
+
+@end

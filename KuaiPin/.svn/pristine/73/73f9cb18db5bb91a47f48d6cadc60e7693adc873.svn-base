@@ -1,0 +1,232 @@
+//
+//  KPActivityWebViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/19.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPActivityWebViewController.h"
+
+#import "UINavigationBar+XM.h"
+#import "UIBarButtonItem+XM.h"
+#import "KPGoodsDetailViewController.h"
+#import "KPSharedTool.h"
+
+NSString * const JSNativeName = @"KP";
+
+@interface KPActivityWebViewController () <WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler, UIScrollViewDelegate>
+
+@property (nonatomic, copy) void (^rightBarItemAction)();
+
+@property (nonatomic, copy) NSString *rightBarItemTitle;
+
+@property (nonatomic, copy) void (^goodDetailCompletion)(CGFloat webViewH);
+
+@property (nonatomic, assign) CGFloat webView_H;
+
+
+
+@end
+
+@implementation KPActivityWebViewController
+
+- (void)loadGoodDetailWithURLStr:(NSString *)urlStr completion:(void (^)(CGFloat webViewH))completion {
+
+    self.urlStr = urlStr;
+    self.goodDetailCompletion = completion;
+    WHYNSLog(@"%@", urlStr);
+
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:self.urlStr]];
+    [self.webView loadRequest:request];
+
+    self.webView.scrollView.scrollEnabled = NO;
+    self.webView.scrollView.showsVerticalScrollIndicator = NO;
+    self.webView.scrollView.showsHorizontalScrollIndicator = NO;
+
+    [self.webView.scrollView addObserver:self forKeyPath:@"contentSize" options:NSKeyValueObservingOptionNew context:nil];
+
+}
+
+- (void)addBarRightButtonActionWithTitle:(NSString *)title action:(void(^)())action {
+
+    self.rightBarItemTitle = title;
+    self.rightBarItemAction = action;
+    
+}
+
+- (void)clickRightBarButtonItem {
+    if (self.rightBarItemAction) {
+        self.rightBarItemAction();
+        return;
+    }
+
+    __weak typeof(self) weakSelf = self;
+
+    NSString *url = self.shareUrl.length ? self.shareUrl : self.urlStr;
+
+    [KPSharedTool sharedWithMessage:self.sharedMessage
+                              title:self.sharedTitle
+                             urlStr:url
+                              image:self.sharedImg
+                           imageSrc:self.sharedImgSrc
+                 fromViewController:weakSelf];
+
+}
+
+#pragma mark - KVO
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSString *,id> *)change context:(void *)context {
+
+    if (!change) return;
+
+    if (self.webView_H == [change[@"new"] CGSizeValue].height) return;
+//    WHYNSLog(@"%f", [change[@"new"] CGSizeValue].height);
+
+    self.webView_H = [change[@"new"] CGSizeValue].height;
+    if (self.goodDetailCompletion) self.goodDetailCompletion(self.webView_H);
+}
+
+#pragma mark - life circle
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    self.automaticallyAdjustsScrollViewInsets = YES;
+    self.view.backgroundColor = WhiteColor;
+    self.navigationController.navigationBar.hidden = NO;
+    
+    [self setupWebView];
+
+    if (!self.hideSharedButton) {
+        self.navigationItem.rightBarButtonItem = [UIBarButtonItem itemWithImageName:@"shared"
+                                                                      highImageName:@"shared"
+                                                                              targe:self
+                                                                             action:@selector(clickRightBarButtonItem)];
+    }
+
+    if (self.rightBarItemTitle && self.rightBarItemAction) {
+        self.navigationItem.rightBarButtonItem = [UIBarButtonItem itemWithTitle:self.rightBarItemTitle
+                                                                     titleColor:OrangeColor
+                                                                hightLightColor:OrangeColor
+                                                                          targe:self
+                                                                         action:@selector(clickRightBarButtonItem)];
+    }
+
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    KPStatisticsEndWithViewName(SelfClassStr)
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    KPStatisticsBeginWithViewName(SelfClassStr)
+}
+
+- (BOOL)willDealloc {
+    [self.webView.configuration.userContentController removeScriptMessageHandlerForName:JSNativeName];
+    return YES;
+}
+
+- (void)setupWebView
+{
+    WKWebViewConfiguration *confi = [WKWebViewConfiguration new];
+    confi.preferences.javaScriptCanOpenWindowsAutomatically = YES;
+
+    [confi.userContentController addScriptMessageHandler:self name:JSNativeName];
+    
+    WKUserScript *deleteTitleDiv = [[WKUserScript alloc]  initWithSource:@"document.getElementsByClassName('title_h1')[0].remove();"
+                                                           injectionTime:WKUserScriptInjectionTimeAtDocumentEnd
+                                                        forMainFrameOnly:YES];
+    [confi.userContentController addUserScript:deleteTitleDiv];
+
+    for (NSString *jsStr in self.jsStrs) {
+        if (jsStr.length) {
+            WKUserScript *js = [[WKUserScript alloc]  initWithSource:jsStr
+                                                       injectionTime:WKUserScriptInjectionTimeAtDocumentEnd
+                                                    forMainFrameOnly:YES];
+            [confi.userContentController addUserScript:js];
+        }
+    }
+    
+    WKWebView *webView = [[WKWebView alloc] initWithFrame:CGRectZero configuration:confi];
+    self.webView = webView;
+    webView.backgroundColor = WhiteColor;
+    webView.UIDelegate = self;
+    webView.navigationDelegate = self;
+
+    
+    if (self.urlStr) {
+        NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:self.urlStr]];
+        [webView loadRequest:request];
+    }else if (self.html) {
+        [webView loadHTMLString:self.html baseURL:nil];
+    }
+    
+    [self.view addSubview:webView];
+    
+    __weak typeof (self.view) weakSelf = self.view;
+    
+    [webView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.mas_equalTo(weakSelf);
+    }];
+
+    
+}
+
+#pragma mark - WKNavigationDelegate
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+
+
+    WHYNSLog(@"%@", navigationAction.request.URL.absoluteString);
+
+    NSString *urlStr = navigationAction.request.URL.absoluteString;
+
+    if ([urlStr hasPrefix:@"kp://"]) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//            [self.navigationController popViewControllerAnimated:YES];
+        });
+        NSPostNote(Noti_CheckJDPayCompletion, nil)
+    }
+
+    decisionHandler(WKNavigationActionPolicyAllow);
+
+}
+
+- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
+    
+
+
+}
+
+- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
+
+    if (![message.name isEqualToString:JSNativeName] && !message.body) return;
+
+    NSString *str = message.body;
+    NSArray *arr = [str componentsSeparatedByString:@":"];
+    NSString *funcName = arr.firstObject;
+    NSString *parameter = arr.lastObject;
+
+    if ([funcName isEqualToString:@"gotoGoodDetail"]) {
+        [self gotoGoodDetail:parameter.integerValue];
+    }
+
+}
+
+#pragma mark - 私有方法
+- (void)gotoGoodDetail:(NSInteger)productId {
+
+    KPGoodsDetailViewController *goodDetailVc = [KPGoodsDetailViewController new];
+    goodDetailVc.product = [KPProduct new];
+    goodDetailVc.product.productId = @(productId);
+    [self.navigationController pushViewController:goodDetailVc animated:YES];
+
+}
+
+@end

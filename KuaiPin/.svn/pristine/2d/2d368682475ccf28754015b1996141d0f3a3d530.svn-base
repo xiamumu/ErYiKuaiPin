@@ -1,0 +1,219 @@
+//
+//  KPDiscoverViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/4/25.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPDiscoverViewController.h"
+#import "KPActivityWebViewController.h"
+#import "KPDiscoverCell.h"
+#import "KPDiscoverModel.h"
+#import "UINavigationBar+XM.h"
+#import "KPDiscoveryHeaderView.h"
+#import "UIBarButtonItem+XM.h"
+#import "KPInviteViewController.h"
+
+
+@interface KPDiscoverViewController ()<UITableViewDataSource, UITableViewDelegate>
+
+@property (nonatomic, strong) UITableView *tableView;
+
+@property (nonatomic, strong) NSArray<KPDiscoverModel *> *models;
+
+@end
+
+@implementation KPDiscoverViewController
+
+- (void)test {
+
+    KPInviteViewController *inviteVc = [KPInviteViewController new];
+    [self.navigationController pushViewController:inviteVc animated:YES];
+
+}
+
+- (void)setModels:(NSArray<KPDiscoverModel *> *)models {
+    _models = models;
+
+    __weak typeof(self) weakSelf = self;
+    static NSInteger count = 0;
+
+    for (KPDiscoverModel *model in self.models) {
+
+        NSURL *url = [NSURL URLWithString:model.image];
+        SDWebImageOptions options = SDWebImageRefreshCached;
+
+        [[SDWebImageManager sharedManager] downloadImageWithURL:url
+                                                        options:options
+                                                       progress:nil
+                                                      completed:^(UIImage *image,
+                                                                  NSError *error,
+                                                                  SDImageCacheType cacheType,
+                                                                  BOOL finished,
+                                                                  NSURL *imageURL) {
+
+                                                          if (image != nil && finished) {
+                                                              model.iconImg = image;
+                                                              count++;
+                                                              if (count == weakSelf.models.count) {
+                                                                  dispatch_async(dispatch_get_main_queue(), ^{
+                                                                      [weakSelf.tableView reloadData];
+                                                                  });
+
+                                                              }
+                                                          }
+                                                          
+                                                      }];
+        
+    }
+
+}
+
+#pragma mark - UITableViewDataSource
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return self.models.count;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return 1;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    KPDiscoverCell *cell = [KPDiscoverCell cellWithTableView:tableView];
+    cell.model = self.models[indexPath.section];
+    
+    return cell;
+}
+
+#pragma mark - UITableViewDelegate
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    KPActivityWebViewController *webVc = [KPActivityWebViewController new];
+    webVc.urlStr = self.models[indexPath.section].url;
+    webVc.sharedImg = self.models[indexPath.section].iconImg;
+    webVc.sharedMessage = self.models[indexPath.section].summary;
+    [self.navigationController pushViewController:webVc animated:YES];
+    
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    
+    KPDiscoveryHeaderView *headerView = [KPDiscoveryHeaderView new];
+    headerView.time = self.models[section].timeStr;
+    
+    return headerView;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return UITableViewAutomaticDimension;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return 300;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return [KPDiscoveryHeaderView headerViewHeight];
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
+    
+    if (section == self.models.count - 1) {
+        return 10;
+    }
+    
+    return 0.00001;
+}
+
+#pragma mark - 控制器生命周期
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [self setupUI];
+    
+    self.navigationItem.title = @"发现";
+
+    __weak typeof(self) weakSelf = self;
+    
+    self.tableView.mj_header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+        
+        [KPNetworkingTool discoveryWithSuccess:^(id result) {
+            
+            [weakSelf.tableView.mj_header endRefreshing];
+            
+            NSInteger code = [result[@"code"] integerValue];
+            
+            if (code != 0) {
+                WHYNSLog(@"%zd -- %@",code, result[@"message"]);
+                return;
+            }
+            
+            weakSelf.models = [KPDiscoverModel mj_objectArrayWithKeyValuesArray:result[@"data"][@"activities"]];
+
+        } failure:^(NSError *error) {
+            WHYNSLog(@"%@", error);
+            [weakSelf.tableView.mj_header endRefreshing];
+        }];
+        
+    }];
+    
+    [self.tableView.mj_header beginRefreshing];
+
+//    self.navigationItem.rightBarButtonItem = [UIBarButtonItem itemWithTitle:@"测试"
+//                                                                 titleColor:BlackColor
+//                                                            hightLightColor:BlackColor
+//                                                                      targe:self
+//                                                                     action:@selector(test)];
+
+}
+
+
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+
+    self.navigationController.navigationBar.shadowImage = nil;
+
+    KPStatisticsBeginWithViewName(SelfClassStr)
+    
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    KPStatisticsEndWithViewName(SelfClassStr)
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    
+}
+
+#pragma mark - 私有方法
+- (void)setupUI {
+    
+    self.view.backgroundColor = ViewBgColor;
+    
+    [self.view addSubview:self.tableView];
+    
+    __weak typeof(self) weakSelf = self;
+    [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.mas_equalTo(weakSelf.view);
+    }];
+    
+}
+
+#pragma mark - 懒加载
+- (UITableView *)tableView {
+    if (_tableView == nil) {
+        _tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleGrouped];
+        _tableView.backgroundColor = ViewBgColor;
+        _tableView.dataSource = self;
+        _tableView.delegate = self;
+        _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    }
+    return _tableView;
+}
+
+@end

@@ -1,0 +1,27 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "b9314f1a-8a60-a648-88ea-1c7ba2faffbb++5326",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "b9314f1a-8a60-a648-88ea-1c7ba2faffbb++5326" : {
+      "DVTSourceControlWorkingCopyRepositoryBranchesLocationKey" : "ios\/branches",
+      "DVTSourceControlWorkingCopyRepositoryTagsLocationKey" : "ios\/tags",
+      "DVTSourceControlWorkingCopyRepositoryPrimaryBranchLocationKey" : "ios\/trunk"
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "b9314f1a-8a60-a648-88ea-1c7ba2faffbb++5326" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "CA8B6C35-7381-4AE8-86C3-F95C6170EE54",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "b9314f1a-8a60-a648-88ea-1c7ba2faffbb++5326" : "ios\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "KuaiPin",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "trunk\/KuaiPin\/KuaiPin.xcworkspace",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/win-f58ieimvfut\/svn\/21kp_app",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "b9314f1a-8a60-a648-88ea-1c7ba2faffbb++5326"
+    }
+  ]
+}

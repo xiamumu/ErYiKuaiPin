@@ -1,0 +1,26 @@
+//
+//  KPAreaListViewController.h
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/11.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+#import "KPAreaModel.h"
+
+@interface KPAreaListViewController : UITableViewController
+
+@property (nonatomic, copy) void (^nextHandler)(NSString *areaName, NSNumber *itemId);
+
+@property (nonatomic, assign) NSInteger parentId;
+
+@property (nonatomic, assign) NSInteger deep;
+
+@property (nonatomic, strong) NSNumber *itemId;
+
+@property (nonatomic, strong) KPAreaModel *areaModel;
+
+- (void)reloadDataWithParentId:(NSInteger)parentId;
+
+@end

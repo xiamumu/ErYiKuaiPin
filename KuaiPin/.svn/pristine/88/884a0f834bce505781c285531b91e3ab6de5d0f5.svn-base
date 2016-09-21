@@ -1,0 +1,86 @@
+//
+//  KPGoodsDetailInfoView.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/8/30.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPGoodsDetailInfoView.h"
+#import "KPChooseParametersView.h"
+
+@interface KPGoodsDetailInfoView ()
+
+@property (weak, nonatomic) IBOutlet UILabel *title;
+
+@property (weak, nonatomic) IBOutlet UILabel *priceLab;
+
+@property (weak, nonatomic) IBOutlet UILabel *desLab;
+
+@property (nonatomic, strong) KPChooseParametersView *paramView;
+
+
+@property (weak, nonatomic) IBOutlet UILabel *parametersLab;
+@end
+
+@implementation KPGoodsDetailInfoView
+
+/**
+ *  参数选择的View
+ */
+- (KPChooseParametersView *)paramView
+{
+    if (_paramView == nil) {
+        _paramView = [KPChooseParametersView parametersView];
+        _paramView.frame = CGRectMake(0, SCREEN_H, SCREEN_W, SCREEN_H);
+    }
+    return _paramView;
+}
+
++ (instancetype)detailInfoView
+{
+    return [[[NSBundle mainBundle] loadNibNamed:@"KPGoodsDetailInfoView" owner:nil options:nil] objectAtIndex:0];
+}
+
+
+/**
+ *  选择型号点击事件
+ */
+- (IBAction)parametersAction:(UIButton *)sender
+{
+    
+    [[UIApplication sharedApplication].keyWindow addSubview:self.paramView];
+    [UIView animateWithDuration:0.4 animations:^{
+        self.paramView.y = 0;
+    }];
+}
+
+- (void)setProductName:(NSString *)productName
+{
+    _productName = productName;
+    self.title.text = productName;
+}
+
+- (void)setProductPrice:(NSString *)productPrice
+{
+    _productPrice = productPrice;
+    self.priceLab.text = [NSString stringWithFormat:@"￥%.2f", [productPrice floatValue]];
+    self.desLab.text = [NSString stringWithFormat:@"消费即可赢得 %@ 元二一美银消费资产", self.priceLab.text];
+}
+
+// 点击查看消费补贴详情
+- (IBAction)explainBtnAction:(KPButton *)sender
+{
+    if (self.checkAssetExplain) {
+        self.checkAssetExplain();
+    }
+}
+
+
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+ 
+    
+}
+@end

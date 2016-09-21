@@ -1,0 +1,24 @@
+//
+//  KPHomePageHeaderView.h
+//  KuaiPin
+//
+//  Created by 21_xm on 16/9/1.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface KPHomePageHeaderView : UIView
+
+@property (nonatomic, strong) NSArray *bannerImages;
+
+@property (nonatomic, copy) void(^leftItemAciton)();
+
+@property (nonatomic, copy) void(^rightTopItemAciton)();
+
+@property (nonatomic, copy) void(^rightBottomItemAciton)();
+
+@property (nonatomic, copy) void(^didSelectCycleScrollViewItem)(NSInteger index);
+
+
+@end

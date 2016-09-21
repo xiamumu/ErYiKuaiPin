@@ -1,0 +1,46 @@
+//
+//  KPGoodModel.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/4.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPGoodModel.h"
+
+@implementation KPGoodModel
+
++ (NSDictionary *)mj_replacedKeyFromPropertyName {
+    return @{@"cartItemId" : @"id"};
+}
+
+- (void)setProductStorage:(NSNumber *)productStorage {
+//#warning
+//    productStorage = @(arc4random_uniform(2));
+
+    _productStorage = productStorage;
+    _maxNum = productStorage.integerValue > 99 ? 99 : productStorage.integerValue;
+    _selecteEnable = productStorage.integerValue;
+}
+
+- (void)setSelected:(BOOL)selected {
+        _selected = selected;
+}
+
+- (NSString *)strSpec1 {
+    return (_strSpec1.length ? _strSpec1 : @"");
+}
+
+- (NSString *)strSpec2 {
+    return (_strSpec2.length ? _strSpec2 : @"");
+}
+
+- (NSString *)strSpec3 {
+    return (_strSpec3.length ? _strSpec3 : @"");
+}
+
+- (NSString *)strSpec {
+    return [NSString stringWithFormat:@"%@ %@ %@", self.strSpec1, self.strSpec2, self.strSpec3];
+}
+
+@end

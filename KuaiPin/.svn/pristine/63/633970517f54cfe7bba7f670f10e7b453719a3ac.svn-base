@@ -1,0 +1,206 @@
+//
+//  KPLoginView.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/5.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPLoginView.h"
+#import "KPTextField.h"
+#import "KPBottomButton.h"
+
+@interface KPLoginView ()<KPTextFieldDelegate>
+
+@property (nonatomic, strong) KPTextField *accountTF;
+
+@property (nonatomic, strong) KPTextField *pwdTF;
+
+@property (nonatomic, strong) KPBottomButton *loginBtn;
+
+@property (nonatomic, strong) KPButton *forgetPwdBtn;
+
+@end
+
+@implementation KPLoginView
+
+- (void)setPhone:(NSString *)phone {
+    _phone = phone;
+    self.accountTF.text = phone;
+}
+
+#pragma mark - KPTextFieldDelegate
+- (BOOL)textField:(KPTextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    
+//    WHYNSLog(@"%zd", string.isEmoji);
+    
+    if (string.length == 0) return YES;
+    
+    if (string.isEmoji) return NO;
+    
+    NSInteger maxLength = [textField isEqual:self.accountTF] ? 11 : 12;
+    
+    if([string isEqualToString:@"\n"]) {
+        //按回车关闭键盘
+        [textField resignFirstResponder];
+        
+        if ([textField isEqual:self.accountTF]) {
+            [self.pwdTF becomeFirstResponder];
+        }else {
+            [self clickLoginButton];
+        }
+        
+        return NO;
+    } else if(textField.text.length >= maxLength) {
+        //输入的字符个数大于maxLength，则无法继续输入，返回NO表示禁止输入
+        WHYNSLog(@"输入的字符个数大于%zd，忽略输入", maxLength);
+        return NO;
+    } else {
+        return YES;
+    }
+    
+}
+
+#pragma mark - 点击事件
+- (void)clickLoginButton {
+    
+    if (self.loginHandler) {
+        self.loginHandler(self.accountTF.text, self.pwdTF.text);
+    }
+    
+}
+
+- (void)clickForgetPwdButton {
+    
+    if (self.forgetPwdHandler) {
+        self.forgetPwdHandler();
+    }
+    
+}
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    [self endEditing:YES];
+}
+
+#pragma mark - 重写父类方法
+- (BOOL)isFirstResponder {
+    return self.accountTF.isFirstResponder || self.pwdTF.isFirstResponder;
+}
+
+#pragma mark - 类方法
++ (instancetype)loginViewWithFrame:(CGRect)frame
+                      loginHandler:(LoginHandler)loginHandler
+                  forgetPwdHandler:(ForgetPwdHandler)forgetPwdHandler {
+    
+    KPLoginView *loginView = [[KPLoginView alloc] initWithFrame:frame];
+    loginView.loginHandler = loginHandler;
+    loginView.forgetPwdHandler = forgetPwdHandler;
+    
+    return loginView;
+}
+
+#pragma mark - 初始化
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self setupUI];
+        [self.accountTF becomeFirstResponder];
+    }
+    return self;
+}
+
+#pragma mark - 私有方法
+- (void)setupUI {
+ 
+    self.backgroundColor = ViewBgColor;
+    
+    KPSeparatorView *sep = [KPSeparatorView new];
+    
+    [self addSubview:self.accountTF];
+    [self addSubview:self.pwdTF];
+    [self addSubview:self.forgetPwdBtn];
+    [self addSubview:self.loginBtn];
+    [self addSubview:sep];
+    
+    __weak typeof(self) weakSelf = self;
+    CGFloat topMargin = 89;
+    CGFloat leftRightMargin = 9;
+    CGFloat textFieldTopMargin = 12;
+    CGFloat textFieldH = 59;
+    CGFloat sepH = 1;
+    CGFloat forgetTopMargin = textFieldTopMargin;
+    CGFloat btnTopMargin = 80;
+    CGFloat btnH = 45;
+    
+    [self.accountTF mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.left.mas_equalTo(weakSelf);
+        make.top.mas_equalTo(weakSelf).offset(topMargin);
+        make.height.mas_equalTo(textFieldH);
+    }];
+    
+    
+    [sep mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf).offset(leftRightMargin);
+        make.right.mas_equalTo(weakSelf);
+        make.centerY.mas_equalTo(weakSelf.accountTF.mas_bottom);
+        make.height.mas_equalTo(sepH);
+    }];
+    
+    [self.pwdTF mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.height.mas_equalTo(weakSelf.accountTF);
+        make.top.mas_equalTo(weakSelf.accountTF.mas_bottom);
+    }];
+    
+    [self.forgetPwdBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.pwdTF.mas_bottom).offset(forgetTopMargin);
+        make.right.mas_equalTo(weakSelf).offset(-leftRightMargin);
+    }];
+    
+    [self.loginBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.pwdTF.mas_bottom).offset(btnTopMargin);
+        make.left.mas_equalTo(weakSelf).offset(leftRightMargin);
+        make.right.mas_equalTo(weakSelf).offset(-leftRightMargin);
+        make.height.mas_equalTo(btnH);
+    }];
+    
+}
+
+#pragma mark - 懒加载
+- (KPTextField *)accountTF {
+    if (_accountTF == nil) {
+        _accountTF = [KPTextField textFieldWithImgName:@"account" title:nil placeHolder:@"请输入手机号"];
+        _accountTF.keyboardType = UIKeyboardTypeNumberPad;
+        _accountTF.delegate = self;
+    }
+    return _accountTF;
+}
+
+- (KPTextField *)pwdTF {
+    if (_pwdTF == nil) {
+        _pwdTF = [KPTextField textFieldWithImgName:@"password" title:nil placeHolder:@"请输入登录密码"];
+        _pwdTF.secureTextEntry = YES;
+        _pwdTF.delegate = self;
+    }
+    return _pwdTF;
+}
+
+- (KPBottomButton *)loginBtn {
+    if (_loginBtn == nil) {
+        _loginBtn = [KPBottomButton bottomButtonWithTitle:@"登录"];
+        [_loginBtn addTarget:self action:@selector(clickLoginButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _loginBtn;
+}
+
+- (KPButton *)forgetPwdBtn {
+    if (_forgetPwdBtn == nil) {
+        _forgetPwdBtn = [KPButton new];
+        _forgetPwdBtn.titleLabel.font = UIFont_14;
+        [_forgetPwdBtn setTitle:@"忘记密码？" forState:UIControlStateNormal];
+        [_forgetPwdBtn setTitleColor:HexColor(#8a8a8a) forState:UIControlStateNormal];
+        [_forgetPwdBtn addTarget:self action:@selector(clickForgetPwdButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _forgetPwdBtn;
+}
+
+@end

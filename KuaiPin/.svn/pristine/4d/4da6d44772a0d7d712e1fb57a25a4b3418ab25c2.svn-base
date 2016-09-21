@@ -1,0 +1,171 @@
+//
+//  KPSubsidizeBottomTool.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/4/26.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPSubsidizeBottomTool.h"
+#import "KPSelecteGoodButton.h"
+
+@interface KPSubsidizeBottomTool ()
+
+@property (nonatomic, strong) KPSelecteGoodButton *selectedAllBtn;
+
+@property (nonatomic, strong) UILabel *totalLB;
+
+@property (nonatomic, strong) UILabel *totalPriceLB;
+
+@property (nonatomic, strong) KPButton *commitBtn;
+
+@end
+
+@implementation KPSubsidizeBottomTool
+
+- (void)setPrice:(CGFloat)price {
+    _price = price;
+    
+    self.totalPriceLB.text = [NSString stringWithFormat:@"￥%.2f", price];
+}
+
+- (void)setCommitEnable:(BOOL)commitEnable {
+    _commitEnable = commitEnable;
+}
+
+- (void)setSelectedAll:(BOOL)selectedAll {
+    _selectedAll = selectedAll;
+    self.selectedAllBtn.selected = selectedAll;
+}
+
+- (void)setSelectedAllEnable:(BOOL)selectedAllEnable {
+    _selectedAllEnable = selectedAllEnable;
+    self.selectedAllBtn.enabled = selectedAllEnable;
+}
+
+#pragma mark - 点击事件
+- (void)clickCommitOrderButton {
+    if ([self.bottomToolDelegate respondsToSelector:@selector(didBottomToolClickCommitOrderButton:)]) {
+        [self.bottomToolDelegate didBottomToolClickCommitOrderButton:self];
+    }
+}
+
+- (void)clickSelectedAllButton {
+
+    if (!self.selectedAllEnable) return;
+
+    self.selectedAllBtn.selected = !self.selectedAllBtn.selected;
+    
+    NSString *selectedState = nil;
+    
+    if (self.selectedAllBtn.selected) {
+        selectedState = GoodSelectedStateSelected;
+    }else {
+        selectedState = GoodSelectedStateUnSelected;
+    }
+    
+    NSPostNoteWithUserInfo(Noti_SelectedAllGoodsBtnAction, nil, @{GoodSelectedStateKey : selectedState})
+}
+
+#pragma mark - 类方法
++ (CGFloat)subsidizeBottomToolHeight {
+    return 50;
+}
+
+#pragma mark - 初始化控件
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        [self setupUI];
+    }
+    return self;
+}
+
+- (void)setupUI {
+    
+    self.backgroundColor = WhiteColor;
+    
+    KPSeparatorView *sep = [KPSeparatorView new];
+    
+    [self addSubview:self.selectedAllBtn];
+    [self addSubview:self.totalLB];
+    [self addSubview:self.totalPriceLB];
+    [self addSubview:sep];
+    [self addSubview:self.commitBtn];
+    
+    __weak typeof(self) weakSelf = self;
+    CGFloat selectedBtnW = 62;
+    [self.selectedAllBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.top.bottom.mas_equalTo(weakSelf);
+        make.width.mas_equalTo(selectedBtnW);
+    }];
+    
+    CGFloat totalLBLeftMargin = 24;
+    [self.totalLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.selectedAllBtn.mas_right).offset(totalLBLeftMargin);
+        make.top.bottom.mas_equalTo(weakSelf);
+    }];
+    
+    [self.totalPriceLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.totalLB.mas_right);
+        make.top.bottom.mas_equalTo(weakSelf);
+    }];
+    
+    CGFloat sepH = 1;
+    [sep mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.top.right.mas_equalTo(weakSelf);
+        make.height.mas_equalTo(sepH);
+    }];
+    
+    CGFloat commitBtnW = 122;
+    [self.commitBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.bottom.right.mas_equalTo(weakSelf);
+        make.width.mas_equalTo(commitBtnW);
+    }];
+    
+    
+    
+}
+
+#pragma mark - 懒加载
+- (KPButton *)commitBtn {
+    if (_commitBtn == nil) {
+        _commitBtn = [KPButton new];
+        [_commitBtn setBackgroundColor:HexColor(#ff6d15)];
+        _commitBtn.titleLabel.font = UIFont_15;
+        [_commitBtn setTitle:@"去结算" forState:UIControlStateNormal];
+        [_commitBtn setTitleColor:HexColor(#ffffff) forState:UIControlStateNormal];
+        [_commitBtn addTarget:self action:@selector(clickCommitOrderButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _commitBtn;
+}
+
+- (KPSelecteGoodButton *)selectedAllBtn {
+    if (_selectedAllBtn == nil) {
+        _selectedAllBtn = [KPSelecteGoodButton selecteGoodButtonWithType:KPSelecteGoodButtonTypeSelectedAll];
+        [_selectedAllBtn addTarget:self action:@selector(clickSelectedAllButton) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _selectedAllBtn;
+}
+
+- (UILabel *)totalLB {
+    if (_totalLB == nil) {
+        _totalLB = [UILabel new];
+        _totalLB.text = @"合计：";
+        _totalLB.font = UIFont_15;
+        _totalLB.textColor = BlackColor;
+    }
+    return _totalLB;
+}
+
+- (UILabel *)totalPriceLB {
+    if (_totalPriceLB == nil) {
+        _totalPriceLB = [UILabel new];
+        _totalPriceLB.text = @"￥0.00";
+        _totalPriceLB.font = UIFont_15;
+        _totalPriceLB.textColor = LightRedColor;
+    }
+    return _totalPriceLB;
+}
+
+@end

@@ -1,0 +1,246 @@
+//
+//  KPAdvancedPayBackDetailView.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/9/1.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPAdvancedPayBackDetailHeadView.h"
+#import "KPSeparatorView.h"
+
+@interface KPAdvancedPayBackDetailHeadView ()
+
+@property (nonatomic, strong) UILabel *priceTitleLB;
+
+@property (nonatomic, strong) UILabel *priceLB;
+
+@property (nonatomic, strong) UILabel *advancedTitleLB;
+
+@property (nonatomic, strong) UILabel *advancedLB;
+
+@property (nonatomic, strong) UILabel *hourNumLB;
+
+@property (nonatomic, strong) UILabel *hourLB;
+
+@property (nonatomic, strong) UILabel *addToDayLB;
+
+@property (nonatomic, strong) UILabel *dayNumLB;
+
+@property (nonatomic, strong) UILabel *dayLB;
+
+@end
+
+@implementation KPAdvancedPayBackDetailHeadView
+
+- (void)setPrice:(NSString *)price {
+    _price = [price copy];
+    self.priceLB.text = [NSString stringWithFormat:@"¥ %@", price];
+}
+
+- (void)setAdvancedTime:(NSInteger)advancedTime {
+    _advancedTime = advancedTime;
+    self.hourNumLB.text = [NSString stringWithFormat:@"%zd", advancedTime];
+    self.dayNumLB.text = [NSString stringWithFormat:@"%zd", advancedTime / 24];
+    
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self setupUI];
+    }
+    return self;
+}
+
+- (void)setupUI {
+
+    self.backgroundColor = WhiteColor;
+
+    KPSeparatorView *sep = [KPSeparatorView new];
+    UIView *tempView = [UIView new];
+
+    [self addSubview:self.priceTitleLB];
+    [self addSubview:self.priceLB];
+    [self addSubview:sep];
+    [self addSubview:self.advancedTitleLB];
+    [self addSubview:tempView];
+    [tempView addSubview:self.advancedLB];
+    [tempView addSubview:self.hourNumLB];
+    [tempView addSubview:self.hourLB];
+    [tempView addSubview:self.addToDayLB];
+    [tempView addSubview:self.dayNumLB];
+    [tempView addSubview:self.dayLB];
+
+    __weak typeof(self) weakSelf = self;
+
+    CGFloat priceTitleTop = 18;
+    CGFloat priceTitleH = 16;
+    CGFloat priceTop = 12;
+    CGFloat priceH = 20;
+    CGFloat advancedTitleTop = 17;
+    CGFloat advanceH = 19;
+    CGFloat hourNumTop = 12;
+    CGFloat hourNumLeftRight = 9;
+    CGFloat dayNumLeftRight = hourNumLeftRight;
+    CGFloat addToDayLeft = 16;
+    CGFloat sepTop = 18;
+    CGFloat sepH = 1;
+    CGFloat sepW = SCREEN_W * 0.5;
+
+    [self.priceTitleLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf).offset(priceTitleTop);
+        make.centerX.mas_equalTo(weakSelf);
+        make.height.mas_equalTo(priceTitleH);
+    }];
+
+    [self.priceLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.priceTitleLB.mas_bottom).offset(priceTop);
+        make.centerX.mas_equalTo(weakSelf);
+        make.height.mas_equalTo(priceH);
+    }];
+
+    [sep mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.priceLB.mas_bottom).offset(sepTop);
+        make.centerX.mas_equalTo(weakSelf);
+        make.height.mas_equalTo(sepH);
+        make.width.mas_equalTo(sepW);
+    }];
+
+    [self.advancedTitleLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(sep.mas_bottom).offset(advancedTitleTop);
+        make.centerX.mas_equalTo(weakSelf);
+        make.height.mas_equalTo(weakSelf.advancedTitleLB);
+    }];
+
+    [tempView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.advancedTitleLB.mas_bottom).offset(hourNumTop);
+        make.centerX.mas_equalTo(weakSelf);
+        make.height.mas_equalTo(weakSelf.priceLB);
+    }];
+
+    [self.advancedLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.bottom.mas_equalTo(tempView);
+        make.height.mas_equalTo(advanceH);
+    }];
+
+    [self.hourNumLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.bottom.mas_equalTo(tempView);
+        make.left.mas_equalTo(weakSelf.advancedLB.mas_right).offset(hourNumLeftRight);
+    }];
+
+    [self.hourLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.hourNumLB.mas_right).offset(hourNumLeftRight);
+        make.bottom.mas_equalTo(tempView);
+        make.height.mas_equalTo(weakSelf.advancedLB);
+    }];
+
+    [self.addToDayLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.hourLB.mas_right).offset(addToDayLeft);
+        make.bottom.mas_equalTo(tempView);
+        make.height.mas_equalTo(weakSelf.advancedLB);
+    }];
+
+    [self.dayNumLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.bottom.mas_equalTo(tempView);
+        make.left.mas_equalTo(weakSelf.addToDayLB.mas_right).offset(dayNumLeftRight);
+    }];
+
+    [self.dayLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.dayNumLB.mas_right).offset(dayNumLeftRight);
+        make.right.bottom.mas_equalTo(tempView);
+        make.height.mas_equalTo(weakSelf.advancedLB);
+    }];
+
+
+}
+
+#pragma mark - 懒加载
+- (UILabel *)priceTitleLB {
+    if (_priceTitleLB == nil) {
+        _priceTitleLB = [UILabel new];
+        _priceTitleLB.text = @"消费资产金额";
+        _priceTitleLB.font = UIFont_15;
+        _priceTitleLB.textColor = BlackColor;
+    }
+    return _priceTitleLB;
+}
+
+- (UILabel *)priceLB {
+    if (_priceLB == nil) {
+        _priceLB = [UILabel new];
+        _priceLB.font = UIFont_26;
+        _priceLB.textColor = OrangeColor;
+    }
+    return _priceLB;
+}
+
+- (UILabel *)advancedTitleLB {
+    if (_advancedTitleLB == nil) {
+        _advancedTitleLB = [UILabel new];
+        _advancedTitleLB.font = UIFont_15;
+        _advancedTitleLB.textColor = BlackColor;
+        _advancedTitleLB.text = @"本次邀请可支配时间";
+    }
+    return _advancedTitleLB;
+}
+
+- (UILabel *)advancedLB {
+    if (_advancedLB == nil) {
+        _advancedLB = [UILabel new];
+        _advancedLB.font = UIFont_18;
+        _advancedLB.textColor = BlackColor;
+        _advancedLB.text = @"提前";
+    }
+    return _advancedLB;
+}
+
+- (UILabel *)hourNumLB {
+    if (_hourNumLB == nil) {
+        _hourNumLB = [UILabel new];
+        _hourNumLB.font = UIFont_26;
+        _hourNumLB.textColor = OrangeColor;
+    }
+    return _hourNumLB;
+}
+
+- (UILabel *)hourLB {
+    if (_hourLB == nil) {
+        _hourLB = [UILabel new];
+        _hourLB.font = UIFont_18;
+        _hourLB.textColor = BlackColor;
+        _hourLB.text = @"小时";
+    }
+    return _hourLB;
+}
+
+- (UILabel *)addToDayLB {
+    if (_addToDayLB == nil) {
+        _addToDayLB = [UILabel new];
+        _addToDayLB.font = UIFont_18;
+        _addToDayLB.textColor = BlackColor;
+        _addToDayLB.text = @"计";
+    }
+    return _addToDayLB;
+}
+
+- (UILabel *)dayNumLB {
+    if (_dayNumLB == nil) {
+        _dayNumLB = [UILabel new];
+        _dayNumLB.font = UIFont_26;
+        _dayNumLB.textColor = OrangeColor;
+    }
+    return _dayNumLB;
+}
+
+- (UILabel *)dayLB {
+    if (_dayLB == nil) {
+        _dayLB = [UILabel new];
+        _dayLB.font = UIFont_18;
+        _dayLB.textColor = BlackColor;
+        _dayLB.text = @"天";
+    }
+    return _dayLB;
+}
+
+@end

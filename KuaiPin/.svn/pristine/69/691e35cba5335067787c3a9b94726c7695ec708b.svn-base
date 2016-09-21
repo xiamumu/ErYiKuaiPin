@@ -1,0 +1,72 @@
+//
+//  KPChooseParametersView.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/8/31.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPChooseParametersView.h"
+#import "KPSingParamView.h"
+
+@interface KPChooseParametersView ()<UIScrollViewDelegate>
+
+
+@property (nonatomic, weak) UIScrollView *scrollView;
+@end
+
+
+@implementation KPChooseParametersView
+
++ (instancetype)parametersView
+{
+    KPChooseParametersView *paramView = [[[NSBundle mainBundle] loadNibNamed:@"KPChooseParametersView" owner:nil options:nil] objectAtIndex:0];
+    
+    return paramView;
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+    self = [super initWithCoder:coder];
+    if (self) {
+        
+        UIScrollView *scrollView = [[UIScrollView alloc] init];
+//        scrollView.backgroundColor = OrangeColor;
+        scrollView.delegate = self;
+        scrollView.showsVerticalScrollIndicator = NO;
+        scrollView.showsHorizontalScrollIndicator = NO;
+        scrollView.bounces = YES;
+        [self addSubview:scrollView];
+        self.scrollView = scrollView;
+        
+        __weak typeof (self) weakSelf = self;
+        [scrollView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.right.mas_equalTo(weakSelf);
+            make.bottom.mas_equalTo(weakSelf).offset(-49);
+            make.height.mas_equalTo(305);
+        
+        }];
+        
+        KPSingParamView *singParamView = [KPSingParamView singParamView];
+//        singParamView.frame = CGRectMake(0, 0, SCREEN_W, singParamView.height);
+        [scrollView addSubview:singParamView];
+        
+        scrollView.contentSize = CGSizeMake(0, CGRectGetMaxY(singParamView.frame));
+        
+    }
+    return self;
+}
+
+- (IBAction)close:(UIButton *)sender
+{
+    [UIView animateWithDuration:0.4 animations:^{
+        self.y = SCREEN_H;
+    }];
+}
+
+- (IBAction)addToSubsize:(KPButton *)sender
+{
+    WHYNSLog(@"-=-=-=-=-=");
+}
+
+@end

@@ -1,0 +1,133 @@
+//
+//  KPLeadPageViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/23.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//  引导页
+
+#import "KPLeadPageViewController.h"
+#import "KPTabBarViewController.h"
+#import "KPAdViewController.h"
+
+@interface KPLeadPageViewController ()<UIScrollViewDelegate>
+
+@property (nonatomic, strong) NSArray *leadImages;
+@property (nonatomic, weak) UIScrollView *scrollView;
+@property (nonatomic, weak) UIPageControl *pageControl;
+
+@end
+
+@implementation KPLeadPageViewController
+
++ (instancetype)leadPage
+{
+    return [[self alloc] init];
+}
+
+- (NSArray *)leadImages
+
+{
+    if (_leadImages == nil) {
+        NSArray *array = @[@"launching_page1", @"launching_page2", @"launching_page3", @"launching_page4", @"launching_page5"];
+        _leadImages = [NSArray arrayWithArray:array];
+    }
+    return _leadImages;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // 1、添加srollView
+    [self setupScrollView];
+    
+}
+
+// 1、添加srollView
+- (void)setupScrollView
+{
+    
+    UIScrollView *scrollView = [[UIScrollView alloc] init];
+    scrollView.frame = self.view.bounds;
+    scrollView.delegate = self;
+    [self.view addSubview:scrollView];
+    self.scrollView = scrollView;
+    NSUInteger count = self.leadImages.count;
+
+    for (int i = 0; i < count; i ++) {
+        UIImageView *imageView = [[UIImageView alloc] init];
+        [scrollView addSubview:imageView];
+        imageView.image = [UIImage imageNamed:self.leadImages[i]];
+        imageView.frame = CGRectMake(SCREEN_W * i, 0, SCREEN_W, SCREEN_H);
+        
+        if (i == count - 1) {
+            WHYNSLog(@"%d",i);
+
+            // 当是最后一张的时候 添加跳转按钮
+            [self setupStartBtnWithLastImageView:imageView];
+        }
+    }
+    
+    scrollView.contentSize = CGSizeMake(count * SCREEN_W, 0);
+    scrollView.pagingEnabled = YES;
+    scrollView.bounces = NO;
+    scrollView.showsHorizontalScrollIndicator = NO;
+    scrollView.backgroundColor = [UIColor whiteColor];
+    
+    UIPageControl *pageControl = [[UIPageControl alloc] init];
+    pageControl.currentPageIndicatorTintColor = OrangeColor;
+    pageControl.numberOfPages = count;
+    [pageControl addTarget:self action:@selector(changePage:) forControlEvents:UIControlEventValueChanged];
+    [self.view addSubview:pageControl];
+    self.pageControl = pageControl;
+    
+    [pageControl mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.mas_equalTo(scrollView);
+        make.bottom.mas_equalTo(scrollView.mas_bottom).offset(- CommonMargin * 2);
+        make.size.mas_equalTo(CGSizeMake(SCREEN_W, 15));
+    }];
+    
+}
+
+// 当是最后一张的时候 添加跳转按钮
+- (void)setupStartBtnWithLastImageView:(UIImageView *)imageView
+{
+    imageView.userInteractionEnabled = YES;
+    
+    // 1.添加开始按钮
+    KPButton *startButton = [[KPButton alloc] init];
+    [imageView addSubview:startButton];
+    [startButton setBackgroundImage:[UIImage imageNamed:@"lauching_page_button"] forState:UIControlStateNormal];
+    [startButton addTarget:self action:@selector(start:) forControlEvents:UIControlEventTouchUpInside];
+    
+    [startButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.mas_equalTo(imageView);
+        make.bottom.mas_equalTo(imageView.mas_bottom).offset(- CommonMargin * 4 - 15);
+        make.size.mas_equalTo(startButton.currentBackgroundImage.size);
+    }];
+    
+}
+// 进入app
+- (void)start:(KPButton *)btn
+{
+    UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+    [UIApplication sharedApplication].statusBarHidden = NO;
+    keyWindow.rootViewController = [[KPAdViewController alloc] init];
+}
+
+/**
+ *  设置圆点的滚动
+ */
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
+{
+    NSUInteger currentPage = scrollView.contentOffset.x / SCREEN_W;
+    self.pageControl.currentPage = currentPage;
+}
+/**
+ *  点击圆点滚动图片跟着改变
+ */
+- (void)changePage:(UIPageControl * )pageControl
+{
+    NSInteger index = pageControl.currentPage;
+    CGPoint point = CGPointMake(SCREEN_W * index, 0);
+    [self.scrollView setContentOffset:point animated:YES];
+}
+@end

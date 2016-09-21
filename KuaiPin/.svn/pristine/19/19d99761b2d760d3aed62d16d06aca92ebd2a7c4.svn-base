@@ -1,0 +1,111 @@
+//
+//  KPShopHeaderView.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/6.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPShopHeaderView.h"
+#import "KPShopDataResult.h"
+
+@interface KPShopHeaderView ()
+
+@property (nonatomic, weak) KPButton *collectBtn;
+@property (nonatomic, weak) UIImageView *icon;
+@property (nonatomic, weak) UILabel *name;
+@property (nonatomic, weak) UILabel *count;
+
+@end
+@implementation KPShopHeaderView
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.userInteractionEnabled = YES;
+        [self setupUI];
+    }
+    return self;
+}
+
+- (void)setupUI
+{
+    self.image = [UIImage imageNamed:@"shop_bg"];
+    
+    UIImageView *icon = [[UIImageView alloc] init];
+    icon.layer.cornerRadius = 67 * 0.5;
+    [self addSubview:icon];
+    self.icon = icon;
+    
+    UILabel *name = [[UILabel alloc] init];
+    name.text = @"二一快品";
+    name.textColor = WhiteColor;
+    name.textAlignment = NSTextAlignmentLeft;
+    name.font = UIFont_13;
+    [self addSubview:name];
+    self.name = name;
+    
+    KPButton *collectBtn = [[KPButton alloc] init];
+    [collectBtn setBackgroundImage:[UIImage imageNamed:@"guanzhu1"] forState:UIControlStateNormal];
+    [collectBtn setBackgroundImage:[UIImage imageNamed:@"guanzhu2"] forState:UIControlStateSelected];
+    [collectBtn addTarget:self action:@selector(likeBtnAction:) forControlEvents:UIControlEventTouchDown];
+    [self addSubview:collectBtn];
+    self.collectBtn = collectBtn;
+    
+    UILabel *count = [[UILabel alloc] init];
+    count.textColor = WhiteColor;
+    count.textAlignment = NSTextAlignmentRight;
+    count.font = UIFont_11;
+    count.text = @"已有998w人关注";
+    [self addSubview:count];
+    self.count = count;
+}
+
+- (void)likeBtnAction:(KPButton *)collectBtn
+{
+    if (self.collectStore) {
+        self.collectStore(collectBtn);
+    }
+}
+
+- (void)setShopData:(KPShopDataResult *)shopData
+{
+    _shopData = shopData;
+    
+    [self.icon sd_setImageWithURL:[NSURL URLWithString:shopData.storeAvatar] placeholderImage:[UIImage imageNamed:@"shopDefaultAvtar"]];
+    self.name.text = shopData.storeName;
+    self.count.text = [NSString stringWithFormat:@"已有%@人关注本店", shopData.followCount];
+    self.collectBtn.selected = shopData.isCollection.boolValue;
+    
+}
+
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    __weak typeof (self) weakSelf = self;
+    [self.icon mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf).offset(CommonMargin);
+        make.top.mas_equalTo(weakSelf).offset(55);
+        make.size.mas_equalTo(CGSizeMake(67, 67));
+    }];
+    
+    [self.name mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.icon.mas_right).offset(CommonMargin);
+        make.centerY.mas_equalTo(weakSelf.icon);
+    }];
+    
+    CGSize collectBtnSize = self.collectBtn.currentBackgroundImage.size;
+    [self.collectBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(weakSelf).offset(-17);
+        make.centerY.mas_equalTo(weakSelf.name);
+        make.size.mas_equalTo(collectBtnSize);
+    }];
+    
+    [self.count mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.collectBtn.mas_bottom).offset(6);
+        make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
+    }];
+    
+}
+@end

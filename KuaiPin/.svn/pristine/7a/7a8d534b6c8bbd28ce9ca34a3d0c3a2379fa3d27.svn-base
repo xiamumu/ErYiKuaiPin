@@ -1,0 +1,122 @@
+//
+//  KPHomePageHeaderView.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/9/1.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPHomePageHeaderView.h"
+#import "SDCycleScrollView.h"
+#import "KPHomePageItem.h"
+#import "KPBanner.h"
+
+
+@interface KPHomePageHeaderView ()<SDCycleScrollViewDelegate>
+
+@property (nonatomic, weak) SDCycleScrollView *bannerView;
+
+@end
+@implementation KPHomePageHeaderView
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        
+        // 1、创建bannerView
+        SDCycleScrollView *bannerView = [SDCycleScrollView cycleScrollViewWithFrame:CGRectMake(0, 0, SCREEN_W, ScaleHeight(194)) delegate:self placeholderImage:nil];
+        bannerView.pageControlAliment = SDCycleScrollViewPageContolAlimentCenter;
+        bannerView.currentPageDotColor = OrangeColor;
+        [self addSubview:bannerView];
+        self.bannerView = bannerView;
+        
+        KPButton *leftItem = [KPButton new];
+        leftItem.backgroundColor = RandomColor;
+        [leftItem addTarget:self action:@selector(leftItemClick:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:leftItem];
+        
+        KPButton *rightItem1 = [KPButton new];
+        [rightItem1 addTarget:self action:@selector(rightTopItemClick:) forControlEvents:UIControlEventTouchUpInside];
+        rightItem1.backgroundColor = RandomColor;
+        [self addSubview:rightItem1];
+        
+        KPButton *rightItem2 = [KPButton new];
+        [rightItem2 addTarget:self action:@selector(rightBottomItemClick:) forControlEvents:UIControlEventTouchUpInside];
+        rightItem2.backgroundColor = RandomColor;
+        [self addSubview:rightItem2];
+        
+        __weak typeof (self) weakSelf = self;
+        
+        [bannerView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.left.right.mas_equalTo(weakSelf);
+            make.height.mas_equalTo(ScaleHeight(230));
+        }];
+        
+        [leftItem mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.mas_equalTo(bannerView.mas_bottom);
+            make.left.mas_equalTo(weakSelf);
+            make.height.mas_equalTo(ScaleHeight(140));
+            make.width.mas_equalTo(ScaleWidth(178));
+        }];
+        
+        [rightItem1 mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.mas_equalTo(bannerView.mas_bottom);
+            make.right.mas_equalTo(weakSelf);
+            make.left.mas_equalTo(leftItem.mas_right);
+            make.height.mas_equalTo(ScaleHeight(70));
+        }];
+        
+        [rightItem2 mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.mas_equalTo(rightItem1.mas_bottom);
+            make.right.mas_equalTo(weakSelf);
+            make.left.mas_equalTo(leftItem.mas_right);
+            make.height.mas_equalTo(ScaleHeight(70));
+        }];
+        
+    }
+    return self;
+}
+
+- (void)leftItemClick:(KPButton *)item
+{
+    if (self.leftItemAciton) {
+        self.leftItemAciton();
+    }
+}
+
+- (void)rightTopItemClick:(KPButton *)item
+{
+    
+    if (self.rightTopItemAciton) {
+        self.rightTopItemAciton();
+    }
+}
+
+
+- (void)rightBottomItemClick:(KPButton *)item
+{
+    if (self.rightBottomItemAciton) {
+        self.rightBottomItemAciton();
+    }
+}
+
+- (void)setBannerImages:(NSArray *)bannerImages
+{
+    _bannerImages = bannerImages;
+    
+    // 设置banner滚动图片
+    
+    NSArray *images = [bannerImages valueForKeyPath:@"image"];
+    
+    self.bannerView.imageURLStringsGroup = images;
+}
+
+- (void)cycleScrollView:(SDCycleScrollView *)cycleScrollView didSelectItemAtIndex:(NSInteger)index
+{
+    if (self.didSelectCycleScrollViewItem) {
+        self.didSelectCycleScrollViewItem(index);
+    }
+}
+
+@end

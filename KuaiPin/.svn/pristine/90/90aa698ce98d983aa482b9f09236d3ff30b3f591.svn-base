@@ -1,0 +1,262 @@
+//
+//  KPPaymentCell.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/10.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPPaymentCell.h"
+#import "KPPaymentButton.h"
+
+@interface KPPaymentCell ()
+
+@property (nonatomic, strong) UILabel *titleLB;
+
+@property (nonatomic, strong) KPPaymentButton *wePayBtn;
+
+@property (nonatomic, strong) KPPaymentButton *balancePayBtn;
+
+@property (nonatomic, strong) KPPaymentButton *bankCardPayBtn;
+
+@property (nonatomic, strong) KPPaymentButton *aliPayBtn;
+
+@property (nonatomic, strong) KPPaymentButton *selectedBtn;
+
+@end
+
+@implementation KPPaymentCell
+
+
+
+- (void)setPaymentTag:(NSInteger)paymentTag {
+    _paymentTag = paymentTag;
+    
+    self.selectedBtn.selected = NO;
+    switch (paymentTag) {
+//        case BalancePaymentTag:
+//            self.selectedBtn = self.balancePayBtn;
+//            break;
+        case BankCardPaymentTag:
+            self.selectedBtn = self.bankCardPayBtn;
+            break;
+        case AliPaymentTag:
+            self.selectedBtn = self.aliPayBtn;
+            break;
+        case WexinPaymentTag:
+        default:
+            self.selectedBtn = self.wePayBtn;
+            break;
+    }
+    self.selectedBtn.selected = YES;
+    
+}
+
+- (void)changePayment:(KPPaymentButton *)sender {
+
+    if (!self.changeEnable) return;
+
+    self.selectedBtn.selected = NO;
+    sender.selected = YES;
+    self.selectedBtn = sender;
+    
+    NSPostNoteWithUserInfo(Noti_ChangePayment, nil, @{PaymentTagKey : @(sender.tag)})
+}
+
++(instancetype)cellWithTableView:(UITableView *)tableView {
+    
+    static NSString *ID = @"KPPaymentCell";
+    
+    KPPaymentCell *cell = [tableView dequeueReusableCellWithIdentifier:ID];
+    
+    if (cell == nil) {
+        cell = [[KPPaymentCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:ID];
+    }
+    
+    return cell;
+}
+
++ (CGFloat)cellHeight {
+#warning 隐藏余额支付
+    return 193;
+}
+
+-(instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
+    if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
+        [self setupUI];
+
+
+    }
+    return self;
+}
+
+- (void)setupUI {
+    
+    self.backgroundColor = WhiteColor;
+    
+    KPSeparatorView *sepTop = [KPSeparatorView new];
+    KPSeparatorView *sepMid = [KPSeparatorView new];
+    KPSeparatorView *sepMidTwo = [KPSeparatorView new];
+    KPSeparatorView *sepBottom = [KPSeparatorView new];
+    
+    [self addSubview:self.titleLB];
+    [self addSubview:self.wePayBtn];
+    [self addSubview:self.balancePayBtn];
+    [self addSubview:self.bankCardPayBtn];
+    [self addSubview:self.aliPayBtn];
+    [self addSubview:sepTop];
+    [self addSubview:sepMid];
+    [self addSubview:sepMidTwo];
+    [self addSubview:sepBottom];
+
+#warning 隐藏支付
+    self.bankCardPayBtn.hidden = YES;
+//    self.balancePayBtn.hidden = YES;
+//    sepMidTwo.hidden = YES;
+    sepBottom.hidden = YES;
+
+    __weak typeof(self) weakSelf = self;
+    CGFloat top = 15;
+    CGFloat left = 9;
+    CGFloat titleH = 16;
+    CGFloat titleW = [self.titleLB.text sizeWithAttributes:@{NSFontAttributeName : self.titleLB.font}].width;
+    CGFloat sepH = 1;
+    CGFloat btnTop = 45;
+    CGFloat btnH = 50;
+    
+    [self.titleLB mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf).offset(left);
+        make.top.mas_equalTo(weakSelf).offset(top);
+        make.height.mas_equalTo(titleH);
+        make.width.mas_equalTo(titleW);
+    }];
+    
+    [self.wePayBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(weakSelf);
+        make.left.mas_equalTo(weakSelf.titleLB);
+        make.top.mas_equalTo(weakSelf).offset(btnTop);
+        make.height.mas_equalTo(btnH);
+    }];
+
+    [self.aliPayBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(weakSelf);
+        make.left.mas_equalTo(weakSelf.titleLB);
+        make.top.mas_equalTo(weakSelf.wePayBtn.mas_bottom);
+        make.height.mas_equalTo(weakSelf.wePayBtn);
+    }];
+
+//    [self.bankCardPayBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+//        make.right.mas_equalTo(weakSelf);
+//        make.left.mas_equalTo(weakSelf.titleLB);
+//        make.top.mas_equalTo(weakSelf.aliPayBtn.mas_bottom);
+//        make.height.mas_equalTo(weakSelf.aliPayBtn);
+//    }];
+
+    [self.balancePayBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(weakSelf);
+        make.left.mas_equalTo(weakSelf.titleLB);
+        make.top.mas_equalTo(weakSelf.aliPayBtn.mas_bottom);
+        make.height.mas_equalTo(weakSelf.aliPayBtn);
+    }];
+    
+    [sepTop mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf.titleLB);
+        make.right.mas_equalTo(weakSelf);
+        make.centerY.mas_equalTo(weakSelf.wePayBtn.mas_top);
+        make.height.mas_equalTo(sepH);
+    }];
+
+    [sepMid mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.height.mas_equalTo(sepTop);
+        make.centerY.mas_equalTo(weakSelf.aliPayBtn.mas_top);
+    }];
+    
+    [sepMidTwo mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.height.mas_equalTo(sepTop);
+        make.centerY.mas_equalTo(weakSelf.balancePayBtn.mas_top);
+    }];
+    
+    [sepBottom mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.height.mas_equalTo(sepTop);
+        make.centerY.mas_equalTo(weakSelf.bankCardPayBtn.mas_top);
+    }];
+    
+}
+
+#pragma mark - 懒加载
+- (UILabel *)titleLB {
+    if (_titleLB == nil) {
+        _titleLB = [UILabel new];
+        _titleLB.text = @"支付方式";
+        _titleLB.font = UIFont_16;
+        _titleLB.textColor = BlackColor;
+    }
+    return _titleLB;
+}
+
+- (KPPaymentButton *)wePayBtn {
+    if (_wePayBtn == nil) {
+        _wePayBtn = [KPPaymentButton new];
+        [_wePayBtn setTitle:@"微信支付" forState:UIControlStateNormal];
+        [_wePayBtn setImage:[UIImage imageNamed:@"weixin-0"] forState:UIControlStateNormal];
+        [_wePayBtn addTarget:self action:@selector(changePayment:) forControlEvents:UIControlEventTouchUpInside];
+        _wePayBtn.selected = YES;
+        _wePayBtn.tag = WexinPaymentTag;
+        self.selectedBtn = _wePayBtn;
+    }
+    return _wePayBtn;
+}
+
+- (KPPaymentButton *)balancePayBtn {
+    if (_balancePayBtn == nil) {
+        _balancePayBtn = [KPPaymentButton new];
+        [_balancePayBtn setTitle:@"余额支付" forState:UIControlStateNormal];
+        [_balancePayBtn setImage:[UIImage imageNamed:@"my_change"] forState:UIControlStateNormal];
+        [_balancePayBtn addTarget:self action:@selector(changePayment:) forControlEvents:UIControlEventTouchUpInside];
+        _balancePayBtn.tag = BalancePaymentTag;
+    }
+    return _balancePayBtn;
+}
+
+- (KPPaymentButton *)bankCardPayBtn {
+    if (_bankCardPayBtn == nil) {
+        _bankCardPayBtn = [KPPaymentButton new];
+        [_bankCardPayBtn setTitle:@"银行卡支付" forState:UIControlStateNormal];
+        [_bankCardPayBtn setImage:[UIImage imageNamed:@"bank card"] forState:UIControlStateNormal];
+        [_bankCardPayBtn addTarget:self action:@selector(changePayment:) forControlEvents:UIControlEventTouchUpInside];
+        _bankCardPayBtn.tag = BankCardPaymentTag;
+    }
+    return _bankCardPayBtn;
+}
+
+- (KPPaymentButton *)aliPayBtn {
+    if (_aliPayBtn == nil) {
+        _aliPayBtn = [KPPaymentButton new];
+        [_aliPayBtn setTitle:@"支付宝支付" forState:UIControlStateNormal];
+        [_aliPayBtn setImage:[UIImage imageNamed:@"zhifubao"] forState:UIControlStateNormal];
+        [_aliPayBtn addTarget:self action:@selector(changePayment:) forControlEvents:UIControlEventTouchUpInside];
+        _aliPayBtn.tag = AliPaymentTag;
+    }
+    return _aliPayBtn;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@end

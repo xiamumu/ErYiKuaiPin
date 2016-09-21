@@ -1,0 +1,23 @@
+//
+//  KPShopSectionHeader.h
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/6.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+@class KPShopSectionHeader;
+
+@protocol KPShopSectionHeaderDelegate <NSObject>
+
+- (void)shopSectionHeader:(KPShopSectionHeader *)sectionHeader didSelectedLeftBtn:(KPButton *)leftbtn;
+- (void)shopSectionHeader:(KPShopSectionHeader *)sectionHeader didSelectedRightBtn:(KPButton *)rightBtn;
+
+@end
+
+@interface KPShopSectionHeader : UIView
+
+@property (nonatomic, assign) id <KPShopSectionHeaderDelegate> delegate;
+
+@end

@@ -1,0 +1,138 @@
+//
+//  KPGoodsCollectionViewCell.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/4/29.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPGoodsCollectionViewCell.h"
+#import "KPProduct.h"
+#import "KPUpdateSubsidizeParam.h"
+#import "KPSoldoutView.h"
+
+@interface KPGoodsCollectionViewCell()
+
+@property (nonatomic, weak) UIImageView *bgView;
+@property (nonatomic, weak) UIImageView *imgView;
+@property (nonatomic, weak) UILabel *brand;
+@property (nonatomic, weak) UILabel *price;
+@property (nonatomic, weak) KPButton *addBtn;
+@property (nonatomic, weak) KPSoldoutView *soldoutView;
+
+@end
+
+@implementation KPGoodsCollectionViewCell
+
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        UIImageView *bgView = [[UIImageView alloc] init];
+        bgView.userInteractionEnabled = YES;
+        bgView.image = [UIImage imageNamed:@"shadow_bg"];
+        [self addSubview:bgView];
+        self.bgView = bgView;
+        
+        
+        UIImageView *imgView = [[UIImageView alloc] init];
+        [self addSubview:imgView];
+        self.imgView = imgView;
+        
+        KPSoldoutView *soldoutView = [[KPSoldoutView alloc] init];
+        soldoutView.titleFont = UIFont_18;
+        soldoutView.hidden = YES;
+        [imgView addSubview:soldoutView];
+        self.soldoutView = soldoutView;
+        
+        UILabel *brand = [UILabel addLabelWithTitle:@"" textColor:RGBColor(25, 25, 25) font:UIFont_13];
+        brand.numberOfLines = 2;
+        [self addSubview:brand];
+        self.brand = brand;
+        
+        UILabel *price = [UILabel addLabelWithTitle:@"" textColor:RGBColor(250, 72, 98) font:UIFont_14];
+        price.textAlignment = NSTextAlignmentRight;
+        [self addSubview:price];
+        self.price = price;
+        
+        KPButton *addBtn = [[KPButton alloc] init];
+        [addBtn setBackgroundImage:[UIImage imageNamed:@"shopping-car-del"] forState:UIControlStateNormal];
+        [addBtn setBackgroundImage:[UIImage imageNamed:@"shopping-car-add"] forState:UIControlStateSelected];
+        [addBtn setBackgroundImage:[UIImage imageNamed:@"shopping-car-sellout"] forState:UIControlStateDisabled];
+        addBtn.adjustsImageWhenHighlighted = NO;
+        [addBtn addTarget:self action:@selector(addBtnAction:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:addBtn];
+        self.addBtn = addBtn;
+           }
+    return self;
+}
+
+- (void)setProduct:(KPProduct *)product
+{
+    _product = product;
+    
+    [self.imgView sd_setImageWithURL:[NSURL URLWithString:product.productCategoryImage] placeholderImage:[UIImage imageNamed:@"homeGoods_Placeholder"]];
+    self.brand.text = product.productName;
+    self.price.text = [NSString stringWithFormat:@"￥%.2f", [product.productPrice floatValue]];
+
+    if (product.productStorage.integerValue == 0) {
+        self.addBtn.enabled = NO;
+        self.soldoutView.hidden = NO;
+        self.brand.textColor = HexColor(8a8a8a);
+        self.price.textColor = HexColor(8a8a8a);
+    } else {
+        self.addBtn.enabled = YES;
+        self.soldoutView.hidden = YES;
+        self.brand.textColor = BlackColor;
+        self.price.textColor = OrangeColor;
+        self.addBtn.selected = product.isCartItem.boolValue;
+    }
+}
+
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    __weak typeof(self) weakSelf = self;
+    [self.bgView mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.edges.mas_equalTo(weakSelf);
+    }];
+    
+    [self.imgView mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.left.top.mas_equalTo(weakSelf.bgView).offset(2);
+        make.right.mas_equalTo(weakSelf.bgView).offset(-2);
+        make.height.mas_equalTo(weakSelf.imgView.mas_width);
+    }];
+    
+    [self.soldoutView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.bottom.mas_equalTo(weakSelf.imgView);
+        make.height.mas_equalTo(ScaleHeight(87));
+    }];
+    
+    [self.brand mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf).offset(CommonMargin);
+        make.right.mas_equalTo(weakSelf).offset(- CommonMargin);
+        make.top.mas_equalTo(weakSelf.imgView.mas_bottom).offset(CommonMargin - 4);
+    }];
+    
+    CGFloat priceLabelHeight = [self.price.text sizeWithAttributes:@{NSFontAttributeName: self.price.font}].height;
+    [self.price mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(weakSelf).offset(5);
+        make.bottom.mas_equalTo(weakSelf).offset(-CommonMargin);
+        make.height.mas_equalTo(priceLabelHeight);
+    }];
+    
+    [self.addBtn mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
+        make.bottom.mas_equalTo(weakSelf.price.mas_bottom);
+        make.size.mas_equalTo(weakSelf.addBtn.currentBackgroundImage.size);
+    }];
+    
+ }
+
+- (void)addBtnAction:(KPButton *)addBtn
+{
+    NSDictionary *userInfo = @{@"product": self.product, @"addBtn": addBtn};
+    NSPostNoteWithUserInfo(Noti_addGoodsToSubsidize, nil, userInfo)
+}
+@end

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="10116" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="iN0-l3-epB" customClass="KPGoodsDetailInfoView">
+            <rect key="frame" x="0.0" y="0.0" width="375" height="80"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" text="商品详情" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RyL-wG-SXl">
+                    <rect key="frame" x="9" y="12" width="357" height="35"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                    <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="￥0.00" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4yj-4P-ql9">
+                    <rect key="frame" x="9" y="56" width="100" height="16"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="100" id="4Xl-dH-rf1"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                    <color key="textColor" red="1" green="0.52244788659999997" blue="0.02940749367" alpha="1" colorSpace="calibratedRGB"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="36a-Kj-DHB" customClass="KPButton">
+                    <rect key="frame" x="347" y="49" width="19" height="22"/>
+                    <state key="normal" image="problem"/>
+                    <connections>
+                        <action selector="explainBtnAction:" destination="iN0-l3-epB" eventType="touchUpInside" id="fZL-6J-1qE"/>
+                    </connections>
+                </button>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="消费资产说明" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="2YZ-iX-v8N">
+                    <rect key="frame" x="138" y="58" width="200" height="12"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="200" id="PPV-sc-CUQ"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" type="system" pointSize="10"/>
+                    <color key="textColor" red="1" green="0.52244788659999997" blue="0.02940749367" alpha="1" colorSpace="calibratedRGB"/>
+                    <nil key="highlightedColor"/>
+                </label>
+            </subviews>
+            <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+            <constraints>
+                <constraint firstItem="4yj-4P-ql9" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="9" id="6XW-XG-McH"/>
+                <constraint firstItem="4yj-4P-ql9" firstAttribute="top" secondItem="RyL-wG-SXl" secondAttribute="bottom" constant="9" id="8Lo-Om-OtV"/>
+                <constraint firstAttribute="trailing" secondItem="RyL-wG-SXl" secondAttribute="trailing" constant="9" id="FX6-2u-pd7"/>
+                <constraint firstAttribute="bottom" secondItem="4yj-4P-ql9" secondAttribute="bottom" constant="8" id="NwE-tF-gQd"/>
+                <constraint firstItem="RyL-wG-SXl" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="9" id="PQe-lf-c8I"/>
+                <constraint firstItem="36a-Kj-DHB" firstAttribute="leading" secondItem="2YZ-iX-v8N" secondAttribute="trailing" constant="9" id="V7V-bs-g3M"/>
+                <constraint firstItem="RyL-wG-SXl" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="12" id="Z9h-jN-Wxe"/>
+                <constraint firstAttribute="bottom" secondItem="2YZ-iX-v8N" secondAttribute="bottom" constant="10" id="iLG-86-dX8"/>
+                <constraint firstAttribute="trailing" secondItem="36a-Kj-DHB" secondAttribute="trailing" constant="9" id="iWB-De-deu"/>
+                <constraint firstAttribute="bottom" secondItem="36a-Kj-DHB" secondAttribute="bottom" constant="9" id="ugH-cT-JQO"/>
+            </constraints>
+            <nil key="simulatedStatusBarMetrics"/>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <connections>
+                <outlet property="desLab" destination="2YZ-iX-v8N" id="v6K-a0-737"/>
+                <outlet property="priceLab" destination="4yj-4P-ql9" id="Zz1-qD-GVE"/>
+                <outlet property="title" destination="RyL-wG-SXl" id="MCJ-BK-t6L"/>
+            </connections>
+            <point key="canvasLocation" x="495.5" y="599"/>
+        </view>
+    </objects>
+    <resources>
+        <image name="problem" width="19" height="20"/>
+    </resources>
+</document>

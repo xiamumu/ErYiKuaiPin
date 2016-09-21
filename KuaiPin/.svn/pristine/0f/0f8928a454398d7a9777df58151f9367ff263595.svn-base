@@ -1,0 +1,45 @@
+//
+//  KPUpdateSubsidizeParam.h
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/31.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPBaseParam.h"
+
+@interface KPUpdateSubsidizeParam : KPBaseParam
+
+/**
+ *  加入购物车的商务车数量
+ */
+@property (nonatomic, copy) NSString *addAmount;
+
+/**
+ *  更改购物车的商务车数量
+ */
+@property (nonatomic, copy) NSString *amount;
+
+/**
+ *  商品参数
+ */
+@property (nonatomic, strong) NSNumber *productId;
+
+/**
+ *  商品规格Id参数
+ */
+@property (nonatomic, strong) NSNumber *productSpecId;
+
+/**
+ *  常规参数   多个参数用,点隔开
+ */
+@property (nonatomic, copy) NSString *specIds;
+
+/**
+ *  活动id
+ */
+@property (nonatomic, copy) NSString *activity_id;
+
+@property (nonatomic, copy) NSString *virginUser;
+
+@end

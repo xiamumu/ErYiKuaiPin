@@ -1,0 +1,211 @@
+//
+//  KPSecretCodeView.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/17.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPSecretCodeView.h"
+#import "KPPayPwdTextField.h"
+
+@interface KPSecretCodeView ()
+
+@property (nonatomic, weak) UIView *subView;
+@property (nonatomic, weak) UIView *cover;
+@property (nonatomic, weak) UILabel *title;
+@property (nonatomic, weak) KPButton *cancleBtn;
+@property (nonatomic, weak) UIView *line1;
+@property (nonatomic, weak) UILabel *subTitle;
+@property (nonatomic, weak) UILabel *moneyLab;
+@property (nonatomic, weak) UILabel *bankLab;
+@property (nonatomic, weak) UIView *line2;
+@property (nonatomic, weak) UIView *line3;
+@property (nonatomic, weak) KPPayPwdTextField *pwdTf;
+@end
+@implementation KPSecretCodeView
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.backgroundColor = ClearColor;
+        
+        
+        UIView *cover = [[UIView alloc] init];
+        cover.backgroundColor = BlackColor;
+        cover.alpha = 0.5;
+        cover.frame = self.frame;
+        [self addSubview:cover];
+        self.cover = cover;
+        
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(removeSelf)];
+        tap.numberOfTapsRequired = 1;
+        tap.numberOfTouchesRequired = 1;
+        [cover addGestureRecognizer:tap];
+        
+        UIView *subView = [[UIView alloc] init];
+        subView.backgroundColor = WhiteColor;
+        subView.layer.masksToBounds = YES;
+        subView.layer.cornerRadius = 10;
+        [self addSubview:subView];
+        self.subView = subView;
+        
+        UILabel *title = [UILabel addLabelWithTitle:@"请输入支付密码" textColor:BlackColor font:UIFont_18];
+        [self addSubview:title];
+        self.title = title;
+        
+        KPButton *cancleBtn = [[KPButton alloc] init];
+        [cancleBtn setBackgroundImage:[UIImage imageNamed:@"close"] forState:UIControlStateNormal];
+        [cancleBtn addTarget:self action:@selector(cancleBtnAction) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:cancleBtn];
+        self.cancleBtn = cancleBtn;
+        
+        UIView *line1 = [UIView line];
+        line1.backgroundColor = OrangeColor;
+        [self addSubview:line1];
+        self.line1 = line1;
+        
+        UILabel *subTitle = [UILabel addLabelWithTitle:@"提现金额" textColor:HexColor(#8a8a8a) font:UIFont_16];
+        [self addSubview:subTitle];
+        self.subTitle = subTitle;
+        
+        UILabel *moneyLab = [UILabel addLabelWithTitle:@"￥100000.00" textColor:OrangeColor font:UIFont_30];
+        [self addSubview:moneyLab];
+        self.moneyLab = moneyLab;
+        
+        UILabel *bankLab = [UILabel addLabelWithTitle:@"工商银行(9087)" textColor:BlackColor font:UIFont_16];
+        [self addSubview:bankLab];
+        self.bankLab = bankLab;
+        
+        UIView *line2 = [UIView line];
+        [self addSubview:line2];
+        self.line2 = line2;
+        
+        UIView *line3 = [UIView line];
+        [self addSubview:line3];
+        self.line3 = line3;
+        
+        KPPayPwdTextField *pwdTf = [[KPPayPwdTextField alloc] init];
+        __weak typeof (pwdTf) weakPwdTf = pwdTf;
+        __weak typeof(self) weakSelf = self;
+        [pwdTf setInputCompletion:^(NSString *payPwd) {
+            if ([payPwd isEqualToString:[KPUserManager sharedUserManager].userModel.payPassword]) {
+                if (weakSelf.completion) {
+                    weakSelf.completion();
+                }
+            }
+            else
+            {
+                [KPProgressHUD showErrorWithStatus:@"支付密码错误" completion:^{
+                    [weakPwdTf clearPayPwd];
+                }];
+                
+            }
+        }];
+        [self addSubview:pwdTf];
+        self.pwdTf = pwdTf;
+        
+    }
+    return self;
+}
+
+- (void)setTakeBackVc:(BOOL)takeBackVc
+{
+    
+    _takeBackVc = takeBackVc;
+    if (takeBackVc) {
+        self.subTitle.text = @"提现金额";
+    }
+    else
+    {
+        self.subTitle.text = @"充值金额";
+    }
+}
+
+- (void)cancleBtnAction
+{
+    [self removeFromSuperview];
+}
+- (void)removeSelf
+{
+    [self removeFromSuperview];
+}
+
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    __weak typeof (self) weakSelf = self;
+    [self.subView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.mas_equalTo(weakSelf);
+        make.top.mas_equalTo(weakSelf).offset(100);
+        make.size.mas_equalTo(CGSizeMake(280, 300));
+    }];
+    
+    CGFloat titleH = [self.title.text sizeWithAttributes:@{NSFontAttributeName: self.title.font}].height;
+    CGFloat top = (50 - titleH) * 0.5;
+    [self.title mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.mas_equalTo(weakSelf);
+        make.top.mas_equalTo(self.subView).offset(top);
+        make.height.mas_equalTo(titleH);
+    }];
+    
+    [self.cancleBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(self.subView).offset(15);
+        make.top.mas_equalTo(self.subView).offset(15);
+        make.size.mas_equalTo(self.cancleBtn.currentBackgroundImage.size);
+    }];
+    
+    [self.line1 mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.mas_equalTo(self.subView);
+        make.bottom.mas_equalTo(self.subView.mas_top).offset(50);
+        make.height.mas_equalTo(1);
+    }];
+
+    CGFloat subTitleH = [self.subTitle.text sizeWithAttributes:@{NSFontAttributeName: self.subTitle.font}].height;
+    [self.subTitle mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.mas_equalTo(weakSelf);
+        make.top.mas_equalTo(self.line1.mas_bottom).offset(CommonMargin * 2);
+        make.height.mas_equalTo(subTitleH);
+    }];
+
+    CGFloat moneyLabH = [self.moneyLab.text sizeWithAttributes:@{NSFontAttributeName: self.moneyLab.font}].height;
+    [self.moneyLab mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.mas_equalTo(weakSelf);
+        make.top.mas_equalTo(self.subTitle.mas_bottom).offset(13);
+        make.height.mas_equalTo(moneyLabH);
+    }];
+
+    [self.line2 mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(self.subView).offset(CommonMargin);
+        make.right.mas_equalTo(self.subView).offset(-CommonMargin);
+        make.bottom.mas_equalTo(self.moneyLab.mas_bottom).offset(CommonMargin * 2);
+        make.height.mas_equalTo(1);
+    }];
+    
+    CGFloat bankLabH = [self.bankLab.text sizeWithAttributes:@{NSFontAttributeName: self.bankLab.font}].height;
+    CGFloat bankTop = (50 - bankLabH) * 0.5;
+    [self.bankLab mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(self.subView).offset(CommonMargin);
+        make.top.mas_equalTo(self.line2.mas_bottom).offset(bankTop);
+        make.height.mas_equalTo(bankLabH);
+    }];
+    
+    [self.line3 mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(self.subView).offset(CommonMargin);
+        make.right.mas_equalTo(self.subView).offset(-CommonMargin);
+        make.bottom.mas_equalTo(self.bankLab.mas_bottom).offset(bankTop);
+        make.height.mas_equalTo(1);
+    }];
+    
+    CGFloat pwdTfMargin = (280 - 240) * 0.5;
+    [self.pwdTf mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.mas_equalTo(self.subView).offset(pwdTfMargin);
+        make.right.mas_equalTo(self.subView).offset(-pwdTfMargin);
+        make.top.mas_equalTo(self.line3.mas_bottom).offset(CommonMargin * 3);
+        make.size.mas_equalTo(CGSizeMake(240, 40));
+    }];
+    
+}
+
+@end

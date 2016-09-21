@@ -1,0 +1,171 @@
+//
+//  KPAddressListViewModel.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/4/27.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPAddressListViewModel.h"
+#import "KPAddressListCell.h"
+#import "KPReceiversModel.h"
+
+@interface KPAddressListViewModel ()
+
+@property (nonatomic, strong) NSArray<KPAddressModel *> *addresses;
+
+@end
+
+@implementation KPAddressListViewModel
+
+- (id)getCellModelAtIndexPath:(NSIndexPath *)indexPath {
+    NSDictionary *dict = [self.addresses[indexPath.section] mj_keyValues];
+    return dict;
+}
+
+- (NSNumber *)getDefaultReceiverId {
+    return self.addresses.firstObject.receiverId;
+}
+
+- (BOOL)checkDefaultReceiverWithId:(NSNumber *)receiverId {
+    if ([receiverId isEqual:self.addresses.firstObject.receiverId]) {
+        return YES;
+    }
+    return NO;
+}
+
+- (void)setData:(id)data {
+    super.data = data;
+    
+    KPReceiversModel *receiversModel = [KPReceiversModel mj_objectWithKeyValues:data];
+    
+    NSMutableArray<KPAddressModel *> *tempArr = [NSMutableArray arrayWithArray:receiversModel.receivers];
+    
+    [receiversModel.receivers enumerateObjectsUsingBlock:^(KPAddressModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+       
+        if (!obj.isDefault.boolValue) {
+            [tempArr removeObject:obj];
+
+            [tempArr sortUsingComparator:^NSComparisonResult(KPAddressModel *  _Nonnull obj1, KPAddressModel *  _Nonnull obj2) {
+
+                if (obj1.receiverId < obj2.receiverId) {
+                    return NSOrderedDescending;
+                }else if (obj1.receiverId > obj2.receiverId) {
+                    return NSOrderedAscending;
+                }else {
+                    return NSOrderedSame;
+                }
+                
+            }];
+
+            [tempArr insertObject:obj atIndex:0];
+        }
+        
+    }];
+
+
+    self.addresses = [tempArr copy];
+    
+}
+
+- (void)changedDefaultAddress:(id)addressModel {
+    
+    NSMutableArray<KPAddressModel *> *tempArr = [NSMutableArray arrayWithArray:self.addresses];
+    __block KPAddressModel *tempModel = nil;
+    
+    [tempArr enumerateObjectsUsingBlock:^(KPAddressModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        
+        if ([addressModel isEqual:obj]) {
+            obj.isDefault = @(0);
+            tempModel = obj;
+        }else {
+            obj.isDefault = @(1);
+        }
+        
+    }];
+    
+    [tempArr removeObject:tempModel];
+    
+    [tempArr sortUsingComparator:^NSComparisonResult(KPAddressModel *  _Nonnull obj1, KPAddressModel *  _Nonnull obj2) {
+        
+        if (obj1.receiverId < obj2.receiverId) {
+            return NSOrderedDescending;
+        }else if (obj1.receiverId > obj2.receiverId) {
+            return NSOrderedAscending;
+        }else {
+           return NSOrderedSame;
+        }
+        
+    }];
+    
+    [tempArr insertObject:tempModel atIndex:0];
+    self.addresses = [tempArr copy];
+    
+}
+
+- (void)addAddress:(id)addressModel {
+    
+    NSMutableArray *arr = [NSMutableArray arrayWithArray:self.addresses];
+    [arr addObject:addressModel];
+    self.addresses = [arr copy];
+    
+}
+
+- (BOOL)deleteAdress:(id)addressModel {
+    
+    __weak typeof(self) weakSelf = self;
+    [self.addresses enumerateObjectsUsingBlock:^(KPAddressModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+       
+        if ([addressModel isEqual:obj]) {
+            NSMutableArray *arr = [NSMutableArray arrayWithArray:weakSelf.addresses];
+            [arr removeObject:obj];
+            weakSelf.addresses = [arr copy];
+        }
+        
+    }];
+    
+    return YES;
+}
+
+- (NSInteger)numberOfSections {
+    if (self.addresses.count == 0) {
+        return 1;
+    }
+    return self.addresses.count;
+}
+
+- (NSInteger)numberOfRowsInSection:(NSInteger)section {
+    return 1;
+}
+
+- (UITableViewCell *)cellForRowAtIndexPath:(NSIndexPath *)indexPath tableView:(UITableView *)tableView {
+    
+    if (self.addresses.count == 0) {
+        
+        UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"no_address_cell"];
+        cell.backgroundColor = WhiteColor;
+        cell.textLabel.text = @"您还没有收获地址，点击新增地址进行添加";
+        cell.textLabel.font = UIFont_14;
+        cell.textLabel.textColor = GrayColor;
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+        cell.textLabel.y = 9;
+        
+        return cell;
+    }
+    
+    KPAddressListCell *cell = [KPAddressListCell cellWithTableView:tableView];
+    cell.model = self.addresses[indexPath.section];
+    
+    return cell;
+}
+
+- (CGFloat)heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (self.addresses.count == 0) {
+        return 53;
+    }
+    return [KPAddressListCell cellHeight];
+}
+
+singleton_implementation(ViewModel)
+
+@end

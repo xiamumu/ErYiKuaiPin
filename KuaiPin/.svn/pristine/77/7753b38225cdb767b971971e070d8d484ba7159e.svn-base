@@ -1,0 +1,21 @@
+//
+//  KPShopDataResult.h
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/31.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface KPShopDataResult : NSObject
+
+@property (nonatomic, copy) NSString *storeName;
+@property (nonatomic, copy) NSString *storeAvatar;
+@property (nonatomic, copy) NSString *storeId;
+@property (nonatomic, copy) NSString *followCount;  // 缺少数据
+@property (nonatomic, copy) NSString *isCollection;
+@property (nonatomic, strong) NSMutableArray *products;
+
+
+@end

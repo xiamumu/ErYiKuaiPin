@@ -1,0 +1,88 @@
+//
+//  KPUserManager.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/9.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPUserManager.h"
+
+#define NSUserStandardDefaults [NSUserDefaults standardUserDefaults]
+
+NSString *const KPUserUserModelFileName = @"User.data";
+
+@implementation KPUserManager
+
+{
+    KPUserModel *_userModel;
+}
+
+#pragma mark - 类方法
++ (void)updateUser {
+    [KPUserManager sharedUserManager].userModel = [KPUserManager sharedUserManager].userModel;
+}
+
++ (void)removeUser {
+    [KPUserManager sharedUserManager].userModel = [KPUserModel new];
+}
+
+- (void)setUserModel:(KPUserModel *)userModel {
+    _userModel = userModel;
+    if (![userModel writeModelToPath:[KPUserModel documentPathWithFileName:KPUserUserModelFileName]]) {
+        WHYNSLog(@"归档失败");
+    }
+}
+
+#pragma mark - get方法
+- (KPUserModel *)userModel {
+    if (_userModel == nil) {
+        _userModel = [KPUserModel readModleWithPath:[KPUserModel documentPathWithFileName:KPUserUserModelFileName]];
+        
+        if (_userModel == nil) {
+            _userModel = [KPUserModel new];
+        }
+        
+    }
+    return _userModel;
+}
+
+singleton_implementation(UserManager);
+
+@end
+
+
+
+
+@implementation KPUserModel
+
++ (NSDictionary *)mj_replacedKeyFromPropertyName {
+    return @{@"userID": @"id"};
+}
+
+- (void)setAvatar:(NSString *)avatar {
+
+    if (avatar.length == 0) return;
+
+    NSRange range = [avatar rangeOfString:@"&"];
+    if (range.length != 0) avatar = [avatar substringToIndex:range.location];
+
+    _avatar = [avatar copy];
+
+    __weak typeof(self) weakSelf = self;
+    NSURL *url = [NSURL URLWithString:_avatar];
+    SDWebImageOptions options = SDWebImageRefreshCached | SDWebImageRetryFailed;
+    [[SDWebImageManager sharedManager] downloadImageWithURL:url
+                                                    options:options
+                                                   progress:nil
+                                                  completed:^(UIImage *image,
+                                                              NSError *error,
+                                                              SDImageCacheType cacheType,
+                                                              BOOL finished,
+                                                              NSURL *imageURL) {
+        weakSelf.avatarImg = image;
+    }];
+    
+}
+
+@end

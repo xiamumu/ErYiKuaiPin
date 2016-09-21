@@ -1,0 +1,19 @@
+//
+//  KPGoodsDetailParam.h
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/30.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface KPGoodsDetailParam : NSObject
+@property (nonatomic, strong) NSNumber *productId;
+
+/**
+ *  活动id
+ */
+@property (nonatomic, copy) NSString *activity_id;
+
+@end

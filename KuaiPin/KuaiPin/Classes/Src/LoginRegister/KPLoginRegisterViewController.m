@@ -1,0 +1,432 @@
+//
+//  KPLoginRegisterViewController.m
+//  KuaiPin
+//
+//  Created by 王洪运 on 16/5/5.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPLoginRegisterViewController.h"
+#import "UIBarButtonItem+XM.h"
+#import "KPLoginRegisterSegmentControl.h"
+#import "KPLoginView.h"
+#import "KPRegisterView.h"
+#import "KPRegisterPwdViewController.h"
+#import <YYText.h>
+#import "KPSMSTool.h"
+#import "KPLoginRegistParam.h"
+#import "KPActivityWebViewController.h"
+#import "KPCommitAuthCodeViewController.h"
+#import "KPForgetPwdViewController.h"
+#import "KPAuthCodeLoginViewController.h"
+
+static BOOL isGotAuthCode = NO;
+
+@interface KPLoginRegisterViewController ()
+
+@property (nonatomic, strong) KPLoginRegisterSegmentControl *segmentControl;
+
+@property (nonatomic, strong) KPLoginView *loginView;
+
+@property (nonatomic, strong) KPRegisterView *registerView;
+
+@property (nonatomic, strong) NSTimer *timer;
+
+@property (nonatomic, assign) NSInteger timeCount;
+
+@end
+
+@implementation KPLoginRegisterViewController
+
+#pragma mark - 点击事件
+- (void)clickCloseButton {
+    
+    NSPostNote(Noti_LoginRegistDismiss, @"");
+    [self dismissViewControllerAnimated:YES completion:nil];
+    
+}
+
+- (void)changedSegmentControlValue {
+    
+    if (self.segmentControl.selectedSegmentIndex == 0) {
+        [self.registerView removeFromSuperview];
+        [self.view addSubview:self.loginView];
+    }else {
+        [self.loginView removeFromSuperview];
+        [self.view addSubview:self.registerView];
+    }
+    
+}
+
+#pragma mark - 控制器声明周期
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [self setupUI];
+    [self setupNavigationBar];
+    
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    [self.view endEditing:YES];
+    
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    
+    // Dispose of any resources that can be recreated.
+}
+
+- (void)dealloc {
+    
+    WHYNSLog(@"KPLoginRegisterViewController dealloc");
+}
+
+#pragma mark - 私有方法
+- (void)loginWithAccount:(NSString *)account pwd:(NSString *)pwd {
+
+    if (!account.isPhoneString) {
+        [KPProgressHUD showErrorWithStatus:@"请输入正确的手机号"];
+        return;
+    }
+
+    if (!pwd.isPasswordString) {
+        [KPProgressHUD showErrorWithStatus:@"请输入6到12数字和英文组成的登录密码"];
+        return;
+    }
+
+    __weak typeof(self) weakSelf = self;
+    
+    KPLoginRegistParam *param = [KPLoginRegistParam new];
+    param.username = account;
+    param.password = pwd;
+
+    [KPNetworkingTool loginWithParam:param success:^(id result) {
+        
+        NSInteger code = [result[@"code"] integerValue];
+        
+        if (code == 10006) {
+            
+            [KPAlertController alertControllerWithTitle:@"您还没有注册哦！"
+                                            cancelTitle:@"取消"
+                                           defaultTitle:@"去注册"
+                                                handler:^(UIAlertAction *action)
+            {
+                                                    
+                weakSelf.segmentControl.selectedSegmentIndex = 1;
+                [weakSelf changedSegmentControlValue];
+                
+            }];
+
+            [weakSelf.view endEditing:YES];
+            return;
+        }
+
+        if (code == 10010) {
+            [KPProgressHUD showErrorWithStatus:@"密码错误"];
+            return;
+        }
+        
+        if (code != 0) {
+            [KPProgressHUD showErrorWithStatus:result[@"message"]];
+            WHYNSLog(@"%zd -- %@",code, result[@"message"]);
+            return;
+        }
+        
+        [KPUserManager sharedUserManager].userModel = [KPUserModel mj_objectWithKeyValues:result[@"data"][@"user"]];
+        [KPUserManager sharedUserManager].userModel.login = @(YES);
+        [KPUserManager updateUser];
+        
+        [KPProgressHUD showSuccessWithStatus:@"登录成功" completion:^{
+            [weakSelf dismissViewControllerAnimated:YES completion:^{
+                NSPostNote(Noti_LoginSuccess, nil);
+            }];
+        }];
+        
+    } failure:^(NSError *error) {
+        
+        WHYNSLog(@"%@", error);
+        [KPProgressHUD showErrorWithStatus:@"登录失败"];
+        
+    }];
+    
+}
+
+- (void)forgetPwd {
+    WHYNSLog(@"忘记密码！");
+
+    KPForgetPwdViewController *forgetPwdVc = [KPForgetPwdViewController new];
+    [self.navigationController pushViewController:forgetPwdVc animated:YES];
+
+}
+
+- (void)authCodeLogin {
+
+    KPAuthCodeLoginViewController *authCodeLoginVc = [KPAuthCodeLoginViewController new];
+    [self.navigationController pushViewController:authCodeLoginVc animated:YES];
+
+}
+
+- (void)commitAuthCodeWithCode:(NSString *)authCode phone:(NSString *)phone agree:(BOOL)agree {
+    
+    __weak typeof(self) weakSelf = self;
+
+    if (!phone.isPhoneString) {
+        [KPProgressHUD showErrorWithStatus:@"请输入正确的手机号"];
+        return;
+    }
+
+    if (!isGotAuthCode) {
+        [weakSelf getAuthCodeWithPhone:phone];
+        return;
+    }
+
+    if (authCode.length == 0) {
+        [KPProgressHUD showErrorWithStatus:@"请输入验证码"];
+        return;
+    }
+
+    if (!agree) {
+        WHYNSLog(@"请阅读《二一快品服务协议》并同意");
+        [KPProgressHUD showErrorWithStatus:@"请阅读《二一快品服务协议》并同意" completion:^{
+            [weakSelf clickRegisterViewKuaiPinServeProtocol];
+        }];
+        return;
+    }
+
+    [KPProgressHUD showLoading];
+    
+    [KPSMSTool commitVerificationCode:authCode phoneNumber:phone result:^(NSError *error) {
+
+        [KPProgressHUD hideLoading];
+
+        if (!error) {
+            WHYNSLog(@"验证成功");
+            
+            KPRegisterPwdViewController *registerPwdVc = [KPRegisterPwdViewController new];
+            registerPwdVc.registerPhoneNum = phone;
+            
+            [weakSelf.navigationController pushViewController:registerPwdVc animated:YES];
+            
+        }else {
+            WHYNSLog(@"错误信息：%@",error);
+            [KPProgressHUD showErrorWithStatus:@"验证码错误"];
+            return;
+        }
+        
+    }];
+    
+}
+
+- (void)getAuthCodeWithPhone:(NSString *)phone {
+    
+    if (!phone.isPhoneString) {
+        WHYNSLog(@"请输入正确的手机号");
+        [KPProgressHUD showErrorWithStatus:@"请输入正确的手机号"];
+        return;
+    }
+    
+
+    __weak typeof(self) weakSelf = self;
+
+    [KPNetworkingTool checkPhoneWithParam:phone success:^(id result) {
+
+        NSNumber *code = result[@"data"][@"code"];
+
+        if (code.integerValue == 1) {
+            [KPProgressHUD showErrorWithStatus:@"该手机号已注册，请登录" completion:^{
+                weakSelf.segmentControl.selectedSegmentIndex = 0;
+                [weakSelf changedSegmentControlValue];
+                weakSelf.loginView.phone = phone;
+            }];
+            return;
+        }
+
+        [KPSMSTool getVerificationCodeByPhoneNumber:phone result:^(NSError *error) {
+
+            if (!error) {
+                WHYNSLog(@"获取验证码成功");
+                isGotAuthCode = YES;
+
+                [KPProgressHUD showSuccessWithStatus:@"已发送验证码"];
+
+                [weakSelf.registerView setGetAuthCodeButtonTitle:@"60秒后可以重新获取验证码" state:UIControlStateDisabled];
+                [weakSelf.registerView setGetAuthCodeButtonTitle:@"重新获取验证码" state:UIControlStateNormal];
+
+                [weakSelf.registerView setGetAuthCodeButtonEnabled:NO];
+
+                weakSelf.timer = [NSTimer scheduledTimerWithTimeInterval:1.0
+                                                                  target:weakSelf
+                                                                selector:@selector(getAuthCodeCountDown)
+                                                                userInfo:nil
+                                                                 repeats:YES];
+                [weakSelf.timer fire];
+
+            } else {
+                WHYNSLog(@"错误信息：%@",error);
+                [KPProgressHUD showErrorWithStatus:error.userInfo[@"getVerificationCode"]];
+            }
+            
+        }];
+
+    } failure:^(NSError *error) {
+         WHYNSLog(@"错误信息：%@",error);
+        [KPProgressHUD showSuccessWithStatus:@"获取验证码失败，请重试"];
+    }];
+
+
+}
+
+- (void)clickRegisterViewKuaiPinServeProtocol {
+    
+    KPActivityWebViewController *webVc =[KPActivityWebViewController new];
+    webVc.title = @"用户注册协议";
+    
+    __weak typeof(self) weakSelf = self;
+    [webVc addBarRightButtonActionWithTitle:@"同意" action:^{
+        [weakSelf.registerView agreeKuaiPinServeProtocol];
+        [weakSelf.navigationController popViewControllerAnimated:YES];
+    }];
+    
+    webVc.urlStr = @"http://21kp.21my.com/UserRegistrationProtocol.html";
+    
+    [self.navigationController pushViewController:webVc animated:YES];
+    
+}
+
+- (void)retryAuthCodeWithPhone:(NSString *)phone {
+
+    if (!phone.isPhoneString) {
+        [KPProgressHUD showErrorWithStatus:@"请输入手机号"];
+        return;
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    [KPProgressHUD showLoading];
+    [KPSMSTool getVerificationCodeByPhoneNumber:phone result:^(NSError *error) {
+        [KPProgressHUD hideLoading];
+        if (!error) {
+            WHYNSLog(@"获取验证码成功");
+            isGotAuthCode = YES;
+            
+            [KPProgressHUD showSuccessWithStatus:@"已重新发送验证码"];
+            
+            [weakSelf.registerView setGetAuthCodeButtonTitle:@"60秒后可以重新获取验证码"  state:UIControlStateDisabled];
+            
+            [weakSelf.registerView setGetAuthCodeButtonEnabled:NO];
+            
+            weakSelf.timer = [NSTimer scheduledTimerWithTimeInterval:1.0
+                                                          target:weakSelf
+                                                        selector:@selector(getAuthCodeCountDown)
+                                                        userInfo:nil
+                                                         repeats:YES];
+            [weakSelf.timer fire];
+            
+        } else {
+            WHYNSLog(@"错误信息：%@",error);
+            [KPProgressHUD showErrorWithStatus:error.userInfo[@"getVerificationCode"]];
+        }
+        
+    }];
+}
+
+- (void)getAuthCodeCountDown {
+    
+    __weak typeof(self) weakSelf = self;
+    
+    weakSelf.timeCount++;
+    
+    NSString *title = [NSString stringWithFormat:@"%zd秒后可以重新获取验证码", 60 - weakSelf.timeCount];
+    [weakSelf.registerView setGetAuthCodeButtonTitle:title  state:UIControlStateDisabled];
+    
+    if (weakSelf.timeCount == 60) {
+        weakSelf.timeCount = 0;
+        [weakSelf.registerView setGetAuthCodeButtonEnabled:YES];
+        [weakSelf.timer invalidate];
+        weakSelf.timer = nil;
+        isGotAuthCode = NO;
+    }
+    
+}
+
+- (void)setupUI {
+    
+    self.view.backgroundColor = ViewBgColor;
+    
+    [self.view addSubview:self.loginView];
+    
+}
+
+- (void)setupNavigationBar {
+    
+    self.navigationItem.leftBarButtonItem = [UIBarButtonItem itemWithImageName:@"close"
+                                                                 highImageName:nil
+                                                             selectedImageName:nil
+                                                                         targe:self
+                                                                        action:@selector(clickCloseButton)];
+    
+    self.navigationItem.titleView = self.segmentControl;
+    
+}
+
+#pragma mark - 懒加载
+- (KPLoginRegisterSegmentControl *)segmentControl {
+    if (_segmentControl == nil) {
+        _segmentControl = [KPLoginRegisterSegmentControl loginRegisterSegmentControl];
+        [_segmentControl addTarget:self
+                            action:@selector(changedSegmentControlValue)
+                  forControlEvents:UIControlEventValueChanged];
+    }
+    return _segmentControl;
+}
+
+- (KPLoginView *)loginView {
+    if (_loginView == nil) {
+        __weak typeof(self) weakSelf = self;
+        _loginView = [KPLoginView loginViewWithFrame:self.view.frame
+                                        loginHandler:^(NSString *account, NSString *pwd) {
+                                            [weakSelf loginWithAccount:account pwd:pwd];
+                                        }
+                                    forgetPwdHandler:^{
+                                        [weakSelf forgetPwd];
+                                    }
+                                authCodeLoginHandler:^{
+                                    [weakSelf authCodeLogin];
+                                }];
+    }
+    return _loginView;
+}
+
+- (KPRegisterView *)registerView {
+    if (_registerView == nil) {
+        __weak typeof(self) weakSelf = self;
+        _registerView = [KPRegisterView registerViewWithFrame:self.view.frame
+                                              nextStepHandler:^(NSString *authCode, NSString *phone, BOOL agree) {
+                                                  [weakSelf commitAuthCodeWithCode:authCode phone:phone agree:agree];
+                                              }
+                             clickKuaiPinServeProtocolHandler:^{
+                                 [weakSelf clickRegisterViewKuaiPinServeProtocol];
+                             }];
+        [_registerView setGetAuthCodeHandler:^(NSString *phone, BOOL isRetry) {
+            
+            if (isRetry) {
+                [weakSelf retryAuthCodeWithPhone:phone];
+            }else {
+                [weakSelf getAuthCodeWithPhone:phone];
+            }
+            
+        }];
+    }
+    return _registerView;
+}
+
+- (BOOL)willDealloc {
+    [self.timer invalidate];
+    self.timer = nil;
+    isGotAuthCode = NO;
+    return NO;
+}
+
+@end

@@ -1,0 +1,102 @@
+//
+//  KPUnPayBackViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/6/13.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#import "KPUnPayBackViewController.h"
+#import "KPOrderParam.h"
+#import "KPPayBackOrder.h"
+@interface KPUnPayBackViewController ()
+
+@end
+
+@implementation KPUnPayBackViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [self setupData];
+    
+    
+    __weak typeof (self) weakSelf = self;
+    self.table.mj_header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+        weakSelf.pageNumber = 1;
+        [weakSelf setupData];
+        [weakSelf.table.mj_header endRefreshing];
+    }];
+    
+//    self.table.mj_footer = [MJRefreshAutoNormalFooter footerWithRefreshingBlock:^{
+//        weakSelf.pageNumber ++;
+//        [weakSelf setupData];
+//        [weakSelf.table.mj_footer endRefreshing];
+//    }];
+    //    self.table.mj_footer.automaticallyHidden = YES;
+    
+    // 刷新订单
+    NSAddObserver(refreshOrders, Noti_RefreshOrders)
+}
+
+#pragma mark - NSNotification
+- (void)refreshOrders
+{
+    [self setupData];
+}
+
+- (void)setupData
+{
+    __weak typeof (self) weakSelf = self;
+    
+    KPPayBackOrderParam *param = [KPPayBackOrderParam param];
+    param.pageNumber = self.pageNumber;
+    
+    
+    [KPNetworkingTool GetPayBackOrdersWithParam:param success:^(id result) {
+        
+//        WHYNSLog(@"%@", result);
+        
+        if (CODE == 0) {
+            
+            if (weakSelf.payBackOrders.count != 0) {
+                [weakSelf.payBackOrders removeAllObjects];
+            }
+            
+            NSArray *array = [KPPayBackOrder mj_objectArrayWithKeyValuesArray:result[@"data"][@"orderList"]];
+            
+            for (KPPayBackOrder *payBackOrder in array) {
+                payBackOrder.payBackState = KPPayBackOrderTypeUnPayBack;
+                [weakSelf.payBackOrders addObject:payBackOrder];
+            }
+            // 刷新表格
+            [weakSelf.table reloadData];
+            
+        } else {  WHYNSLog(@"请求数据失败%@",result[@"message"]); }
+        
+        // 如果无订单，则提示用户无可现实的内容
+        weakSelf.withoutAnythingView.hidden = weakSelf.payBackOrders.count != 0;
+
+        
+    } failure:^(NSError *error) { }];
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    NSString *orderSn = self.payBackOrders[indexPath.section].orderSn;
+    NSPostNote(Noti_PayBackOrderDetail, orderSn)
+    
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    KPStatisticsBeginWithViewName(SelfClassStr)
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    KPStatisticsEndWithViewName(SelfClassStr)
+}
+
+@end

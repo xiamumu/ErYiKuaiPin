@@ -1,0 +1,659 @@
+//
+//  KPGoodsListViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/4/29.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//  展示点击查看更多以后跳转的商品展示页面
+
+#import "KPGoodsListViewController.h"
+#import "UIBarButtonItem+XM.h"
+#import "KPSubsidizeViewController.h"
+#import "KPGoodsDetailViewController.h"
+#import "KPLoginRegisterViewController.h"
+
+// View
+#import "KPGoodsListView.h"
+#import "KPGoodsListBottomView.h"
+#import "XMSearchBar.h"
+#import "KPSubsidizeButton.h"
+
+
+#import "KPProduct.h"
+#import "KPProductCategoryIdParam.h"
+#import "KPUpdateSubsidizeParam.h"
+#import "KPMoreProductsParam.h"
+#import "KPSearchParam.h"
+#import "KPNavigationController.h"
+#import "KPSortBar.h"
+
+typedef enum : NSUInteger {
+    KPSortTpyeByTimeDesc,       // 按时间降序
+    KPSortTpyeByTimeAsc,        // 按时间升序
+    KPSortTpyeByPriceDesc,      // 按价格降序
+    KPSortTpyeByPriceAsc,       // 按价格升序
+    KPSortTpyeBySalesDesc,      // 按销量降序
+    KPSortTpyeByHotDesc,        // 按热度降序
+} KPSortTpye;
+
+@interface KPGoodsListViewController () <KPSortBarDelegate>
+
+@property (nonatomic, strong) NSMutableArray *products;
+
+@property (nonatomic, weak) KPSortBar *topView;
+
+@property (nonatomic, weak) KPGoodsListView *goodsListView;
+
+/***  类别 区别是哪个模块请求数据 */
+//@property (nonatomic, copy) NSString *type;
+
+/***  请求的数据用的是什么排序方法 */
+@property (nonatomic, assign) KPSortTpye sortType;
+
+/***  加载商品的页码 */
+@property (nonatomic, assign) NSUInteger pageNumber;
+
+
+@end
+
+@implementation KPGoodsListViewController
+
+
+
+- (NSMutableArray *)products
+{
+    if (_products == nil) {
+        _products = [[NSMutableArray alloc] init];
+    }
+    return _products;
+}
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    
+    self.view.backgroundColor = [UIColor whiteColor];
+    self.automaticallyAdjustsScrollViewInsets = NO;
+    
+    self.pageNumber = 1;
+    
+    [self setupNavigationBar];
+    
+    [self setupUI];
+    
+
+    
+}
+
+#pragma mark - 请求数据
+// 默认请求（按商品添加时间）
+- (void)setupDefaultData
+{
+    self.sortType = KPSortTpyeByTimeDesc;
+    if (self.isSelectedAllProducts == YES) { // 查看是否点击了所有商品
+        
+        KPProductCategoryIdParam *param = [KPProductCategoryIdParam param];
+        param.pageNumber = self.pageNumber;
+        param.sort = @"productAddtime";
+        param.dir = @"desc";
+        
+        [self setupAllProductsWithParam:param];
+        
+    } else { // 如果未点击所有商品
+        
+        self.isSelectedAllProducts = NO; //改成未点击所有商品状态
+        
+        if (self.pcId.length) { // 分类
+            KPProductCategoryIdParam *param = [KPProductCategoryIdParam param];
+            param.pcId = self.pcId;
+            param.sort = @"productAddtime";
+            param.pageNumber = self.pageNumber;
+            param.dir = @"desc";
+            
+            [self setupCategoryDataWithParam:param];
+        }
+        else if (self.keyword.length) // 搜索
+        {
+            KPSearchParam *param = [KPSearchParam param];
+            param.keyword = self.keyword;
+            param.storeId = self.storeId;
+            param.sort = @"productAddtime";
+            param.pageNumber = self.pageNumber;
+            param.dir = @"desc";
+            
+            [self searchWithParam:param];
+        }
+    }
+    
+}
+
+/**
+ *  价格降序
+ */
+- (void)accordingPriceDesc
+{
+    self.sortType = KPSortTpyeByPriceDesc;
+    if (self.isSelectedAllProducts == YES) { // 查看是否点击了所有商品
+        
+        KPProductCategoryIdParam *param = [KPProductCategoryIdParam param];
+        param.sort = @"productPrice";
+        param.dir = @"desc";
+        param.pageNumber = self.pageNumber;
+        [self setupAllProductsWithParam:param];
+        
+    } else { // 如果未点击所有商品
+        self.isSelectedAllProducts = NO; //改成未点击所有商品状态
+        
+        if (self.pcId.length) { // 分类
+            KPProductCategoryIdParam *param = [KPProductCategoryIdParam param];
+            param.pcId = self.pcId;
+            param.sort = @"productPrice";
+            param.dir = @"desc";
+            param.pageNumber = self.pageNumber;
+            
+            [self setupCategoryDataWithParam:param];
+        }
+        else if (self.keyword.length)  // 搜索
+        {
+            KPSearchParam *param = [[KPSearchParam alloc] init];
+            param.keyword = self.keyword;
+            param.storeId = self.storeId;
+            param.sort = @"productPrice";
+            param.dir = @"desc";
+            param.pageNumber = self.pageNumber;
+            
+            [self searchWithParam:param];
+        }
+    }
+}
+
+/**
+ *  价格升序
+ */
+- (void)accordingPriceAsc
+{
+    
+    self.sortType = KPSortTpyeByPriceAsc;
+    if (self.isSelectedAllProducts == YES) { // 查看是否点击了所有商品
+        
+        KPProductCategoryIdParam *param = [KPProductCategoryIdParam param];
+        param.sort = @"productPrice";
+        param.pageNumber = self.pageNumber;
+        [self setupAllProductsWithParam:param];
+        
+        
+    } else { // 如果未点击所有商品
+        self.isSelectedAllProducts = NO;   //改成未点击所有商品状态
+        
+        if (self.pcId.length) { // 分类
+            KPProductCategoryIdParam *param = [KPProductCategoryIdParam param];
+            param.pcId = self.pcId;
+            param.sort = @"productPrice";
+            param.pageNumber = self.pageNumber;
+            
+            [self setupCategoryDataWithParam:param];
+        }
+        
+        else if (self.keyword.length) // 搜索
+        {
+            KPSearchParam *param = [[KPSearchParam alloc] init];
+            param.keyword = self.keyword;
+            param.storeId = self.storeId;
+            param.sort = @"productPrice";
+            param.pageNumber = self.pageNumber;
+            
+            [self searchWithParam:param];
+        }
+    }
+}
+
+
+/**
+ *  销量降序
+ */
+- (void)accordingSalesDesc
+{
+    
+    self.sortType = KPSortTpyeBySalesDesc;
+    if (self.isSelectedAllProducts == YES) { // 查看是否点击了所有商品
+        
+        KPProductCategoryIdParam *param = [KPProductCategoryIdParam param];
+        param.sort = @"productSalenum";
+        param.dir = @"desc";
+        param.pageNumber = self.pageNumber;
+        [self setupAllProductsWithParam:param];
+        
+        
+    } else { // 如果未点击所有商品
+        self.isSelectedAllProducts = NO;   //改成未点击所有商品状态
+        
+        if (self.pcId.length) { // 分类
+            KPProductCategoryIdParam *param = [KPProductCategoryIdParam param];
+            param.pcId = self.pcId;
+            param.sort = @"productSalenum";
+            param.dir = @"desc";
+            param.pageNumber = self.pageNumber;
+            
+            [self setupCategoryDataWithParam:param];
+        }
+        
+        else if (self.keyword.length) // 搜索
+        {
+            KPSearchParam *param = [[KPSearchParam alloc] init];
+            param.keyword = self.keyword;
+            param.storeId = self.storeId;
+            param.sort = @"productSalenum";
+            param.dir = @"desc";
+            param.pageNumber = self.pageNumber;
+            
+            [self searchWithParam:param];
+        }
+    }
+}
+
+
+/**
+ *  热度降序
+ */
+- (void)accordingHotDesc
+{
+    
+    self.sortType = KPSortTpyeByHotDesc;
+    if (self.isSelectedAllProducts == YES) { // 查看是否点击了所有商品
+        
+        KPProductCategoryIdParam *param = [KPProductCategoryIdParam param];
+        param.sort = @"productClick";
+        param.dir = @"desc";
+        param.pageNumber = self.pageNumber;
+        [self setupAllProductsWithParam:param];
+        
+        
+    } else { // 如果未点击所有商品
+        self.isSelectedAllProducts = NO;   //改成未点击所有商品状态
+        
+        if (self.pcId.length) { // 分类
+            KPProductCategoryIdParam *param = [KPProductCategoryIdParam param];
+            param.pcId = self.pcId;
+            param.sort = @"productClick";
+            param.dir = @"desc";
+            param.pageNumber = self.pageNumber;
+            
+            [self setupCategoryDataWithParam:param];
+        }
+        
+        else if (self.keyword.length) // 搜索
+        {
+            KPSearchParam *param = [[KPSearchParam alloc] init];
+            param.keyword = self.keyword;
+            param.storeId = self.storeId;
+            param.sort = @"productClick";
+            param.dir = @"desc";
+            param.pageNumber = self.pageNumber;
+            
+            [self searchWithParam:param];
+        }
+    }
+}
+
+// 获取分类数据
+- (void)setupCategoryDataWithParam:(KPProductCategoryIdParam *)param
+{
+    __weak typeof (self) weakSelf = self;
+    [KPNetworkingTool productCategoryIdWithParam:param success:^(id result) {
+        
+        [weakSelf setupDataWithResultData:result];
+        
+    } failure:^(NSError *error) { }];
+    
+}
+
+
+// 搜索
+- (void)searchWithParam:(KPSearchParam *)param
+{
+    __weak typeof (self) weakSelf = self;
+    [KPNetworkingTool search:param Success:^(id result) {
+        
+        [weakSelf setupDataWithResultData:result];
+        
+    } failure:^(NSError *error) {
+        
+    }];
+}
+
+// 获取所有商品
+- (void)setupAllProductsWithParam:(KPProductCategoryIdParam *)param
+{
+    __weak typeof (self) weakSelf = self;
+    [KPNetworkingTool GetAllProductsWithParam:param success:^(id result) {
+        
+        [weakSelf setupDataWithResultData:result];
+        weakSelf.isSelectedAllProducts = YES;
+        
+    } failure:^(NSError *error) {  }];
+}
+
+// 请求数据结果处理
+- (void)setupDataWithResultData:(id)result
+{
+//    WHYNSLog(@"%@",result);
+    
+    if (CODE != 0) return;
+    
+    if (self.pageNumber == 1) {
+        
+        self.products = [KPProduct mj_objectArrayWithKeyValuesArray:result[@"data"][@"productList"]];
+        if (self.products.count < 16) {
+            self.goodsListView.showEndRefreshingWithNoMoreData = YES;
+        } else {
+            self.goodsListView.showEndRefreshingWithNoMoreData = NO;
+        }
+    } else {
+        
+        NSArray *newProducts = [KPProduct mj_objectArrayWithKeyValuesArray:result[@"data"][@"productList"]];
+        if (newProducts.count == 0) {
+            self.goodsListView.showEndRefreshingWithNoMoreData = YES;
+        } else {
+            [self.products addObjectsFromArray:newProducts];
+            self.goodsListView.showEndRefreshingWithNoMoreData = NO;
+        }
+    }
+    
+    self.goodsListView.products = self.products;
+}
+
+// 获取购物车商品数量
+- (void)setupSubsidizeCount
+{
+    __weak typeof (self) weakSelf = self;
+    [KPNetworkingTool getCarItemCountSuccess:^(id result) {
+        
+        if (CODE != 0) return;
+        
+        NSString *bageValue = [NSString stringWithFormat:@"%@", result[@"data"][@"cartItemCount"]];
+        
+        weakSelf.goodsListView.subsidizeCount = bageValue;
+        
+        UIViewController *tabBarVc = [UIApplication sharedApplication].keyWindow.rootViewController;
+        UINavigationController *vc = tabBarVc.childViewControllers[3];
+        
+        if ([bageValue isEqualToString:@"0"]) {
+            vc.tabBarItem.badgeValue = nil;
+        }  else {
+            vc.tabBarItem.badgeValue = bageValue;
+        }
+        
+    } failure:^(NSError *error) { }];
+}
+
+#pragma mark - 添加监听事件
+- (void)setupNotification
+{
+    // 跳转到购物车
+    NSAddObserver(jumpToSubsize, Noti_JumpToSubsidize)
+}
+
+// 跳到购物车
+- (void)jumpToSubsize
+{
+    if (!IsLogin)
+    {
+        KPLoginRegisterViewController *logVc = [[KPLoginRegisterViewController alloc] init];
+        KPNavigationController *nav = [[KPNavigationController alloc] initWithRootViewController:logVc];
+        [self presentViewController:nav animated:YES completion:nil];
+    }
+    else
+    {
+        KPSubsidizeViewController *subSizeVc = [[KPSubsidizeViewController alloc] init];
+        subSizeVc.title = @"G库";
+        [self.navigationController pushViewController:subSizeVc animated:YES];
+    }
+}
+
+#pragma mark - KPGoodsListTopViewDelegate
+// 按照价格排序
+- (void)SortBar:(KPSortBar *)sortBar didSelectedPriceBtn:(KPButton *)priceBtn otherBtnSalesBtn:(KPButton *)salesBtn andHotBtn:(KPButton *)hotBtn
+{
+    self.pageNumber = 1;
+    if (priceBtn.selected == NO) {
+        [self accordingPriceDesc];
+        [priceBtn setImage:[UIImage imageNamed:@"home_sort_down"] forState:UIControlStateNormal];
+        priceBtn.selected = YES;
+    } else {
+        [self accordingPriceAsc];
+        [priceBtn setImage:[UIImage imageNamed:@"home_sort_up"] forState:UIControlStateNormal];
+        priceBtn.selected = NO;
+    }
+    
+    [priceBtn setTitleColor:OrangeColor forState:UIControlStateNormal];
+    [salesBtn setTitleColor:BlackColor forState:UIControlStateNormal];
+    [hotBtn setTitleColor:BlackColor forState:UIControlStateNormal];
+    salesBtn.selected = NO;
+    hotBtn.selected = NO;
+    
+    // 滚到顶部
+    [self.goodsListView scrollToTop];
+    // 消除没有更多数据的状态
+    [self.goodsListView resetNoMoreData];
+}
+// 按照销量排序
+- (void)SortBar:(KPSortBar *)sortBar didSelectedSalesBtn:(KPButton *)salesBtn otherBtnPriceBtn:(KPButton *)priceBtn andHotBtn:(KPButton *)hotBtn
+{
+    if(salesBtn.selected == NO) {
+        self.pageNumber = 1;
+        [self accordingSalesDesc];
+        [salesBtn setTitleColor:OrangeColor forState:UIControlStateNormal];
+        [priceBtn setTitleColor:BlackColor forState:UIControlStateNormal];
+        [hotBtn setTitleColor:BlackColor forState:UIControlStateNormal];
+        [priceBtn setImage:[UIImage imageNamed:@"home_sort_normal"] forState:UIControlStateNormal];
+        
+        // 滚到顶部
+        [self.goodsListView scrollToTop];
+        // 消除没有更多数据的状态
+        [self.goodsListView resetNoMoreData];
+        salesBtn.selected = YES;
+        hotBtn.selected = NO;
+    } else {
+        return;
+    }
+}
+// 按照热度排序
+- (void)SortBar:(KPSortBar *)sortBar didSelectedHotBtn:(KPButton *)hotBtn otherBtnPriceBtn:(KPButton *)priceBtn andSalesBtn:(KPButton *)salesBtn
+{
+    
+    if(hotBtn.selected == NO) {
+        self.pageNumber = 1;
+        [self accordingHotDesc];
+        [hotBtn setTitleColor:OrangeColor forState:UIControlStateNormal];
+        [priceBtn setTitleColor:BlackColor forState:UIControlStateNormal];
+        [salesBtn setTitleColor:BlackColor forState:UIControlStateNormal];
+        [priceBtn setImage:[UIImage imageNamed:@"home_sort_normal"] forState:UIControlStateNormal];
+        
+        // 滚到顶部
+        [self.goodsListView scrollToTop];
+        // 消除没有更多数据的状态
+        [self.goodsListView resetNoMoreData];
+        hotBtn.selected = YES;
+        salesBtn.selected = NO;
+    } else {
+        return;
+    }
+}
+#pragma mark - UI创建
+- (void)setupUI
+{
+    KPSortBar *topView = [[KPSortBar alloc] init];
+    topView.delegate = self;
+    [self.view addSubview:topView];
+    self.topView = topView;
+
+    KPGoodsListView *goodsListView = [[KPGoodsListView alloc] init];
+    [self.view addSubview:goodsListView];
+    self.goodsListView = goodsListView;
+    
+    __weak typeof (self) weakSelf = self;
+    [goodsListView setDidSelectedItemIndex:^(KPProduct *product) {
+        KPGoodsDetailViewController *goodsDetailVc = [[KPGoodsDetailViewController alloc] init];
+        goodsDetailVc.product = product;
+        [weakSelf.navigationController pushViewController:goodsDetailVc animated:YES];
+    }];
+    
+    /**
+     *  拉下刷新
+     */
+    [goodsListView setRefreshData:^{
+
+        weakSelf.pageNumber = 1;
+        
+        switch (weakSelf.sortType) {
+            case KPSortTpyeByTimeDesc:
+            case KPSortTpyeByTimeAsc:
+                [weakSelf setupDefaultData];
+                break;
+            case KPSortTpyeByPriceAsc:
+                [weakSelf accordingPriceAsc];
+                break;
+            case KPSortTpyeByPriceDesc:
+                [weakSelf accordingPriceDesc];
+                break;
+            case KPSortTpyeBySalesDesc:
+                [weakSelf accordingSalesDesc];
+                break;
+            case KPSortTpyeByHotDesc:
+                [weakSelf accordingHotDesc];
+                break;
+                
+            default:
+                break;
+        }
+        
+        
+    }];
+    /**
+     *  上拉加载
+     */
+    [goodsListView setReloadMoreData:^{
+        
+        weakSelf.pageNumber ++;
+        
+        switch (weakSelf.sortType) {
+            case KPSortTpyeByTimeDesc:
+            case KPSortTpyeByTimeAsc:
+                [weakSelf setupDefaultData];
+                break;
+            case KPSortTpyeByPriceAsc:
+                [weakSelf accordingPriceAsc];
+                break;
+            case KPSortTpyeByPriceDesc:
+                [weakSelf accordingPriceDesc];
+                break;
+            case KPSortTpyeBySalesDesc:
+                [weakSelf accordingSalesDesc];
+                break;
+            case KPSortTpyeByHotDesc:
+                [weakSelf accordingHotDesc];
+                break;
+                
+            default:
+                break;
+        }
+        
+    }];
+    
+    
+    CGFloat top = Absolute_Y ? 0 : 64;
+    
+    [topView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.mas_equalTo(weakSelf.view);
+        make.top.mas_equalTo(weakSelf.view).offset(top);
+        make.height.mas_equalTo(38);
+    }];
+    
+    [goodsListView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.mas_equalTo(weakSelf.view);
+        make.top.mas_equalTo(weakSelf.topView.mas_bottom);
+        make.bottom.mas_equalTo(weakSelf.view);
+    }];
+}
+
+#pragma mark - 创建navigationBar
+- (void)setupNavigationBar
+{
+    
+    if (self.keyword.length) {
+        
+        self.title = @"搜索结果";
+        
+    }
+    if (self.pcId.length) {
+        
+        self.navigationItem.rightBarButtonItem = [UIBarButtonItem itemWithTitle:@"全部商品" titleColor:OrangeColor hightLightColor:GrayColor targe:self action:@selector(getAllProducts)];
+    }
+}
+// 获取全部商品
+- (void)getAllProducts
+{
+    KPGoodsListViewController *allProcuctsVc = [[KPGoodsListViewController alloc] init];
+    allProcuctsVc.isSelectedAllProducts = YES;
+    allProcuctsVc.title = @"全部商品";
+    [self.navigationController pushViewController:allProcuctsVc animated:YES];
+}
+// 搜索商品
+- (void)seacrchGoodsAction:(NSNotification *)note {
+    
+    if (!note.object) return;
+    
+    KPGoodsListViewController *goodsListVc = [KPGoodsListViewController new];
+    goodsListVc.keyword = note.object;
+    [self.navigationController pushViewController:goodsListVc animated:YES];
+    
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    
+    self.navigationController.navigationBar.hidden = NO;
+    
+    KPStatisticsBeginWithViewName(SelfClassStr)
+    
+    __weak typeof (self) weakSelf = self;
+    CGFloat top = Absolute_Y ? 0 : 64;
+    [self.topView mas_updateConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(weakSelf.view).offset(top);
+    }];
+    
+    // 搜索商品
+    NSAddObserver(seacrchGoodsAction:, Noti_SearchGoods)
+    
+}
+
+- (void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+    
+    
+    // 获取购物车商品数量
+    [self setupSubsidizeCount];
+    
+    // 请求数据
+    [self setupDefaultData];
+
+    // 添加通知
+    [self setupNotification];
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+    NSRemoveObserver
+    KPStatisticsBeginWithViewName(SelfClassStr)
+}
+
+
+- (void)dealloc
+{
+    // 移除通知
+    NSRemoveObserver
+}
+
+
+@end
