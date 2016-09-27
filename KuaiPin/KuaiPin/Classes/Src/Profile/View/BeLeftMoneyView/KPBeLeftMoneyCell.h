@@ -9,9 +9,11 @@
 #import <UIKit/UIKit.h>
 #import "KPBeLeftMoneyRowData.h"
 
+@class KPFundsFlow;
+
 @interface KPBeLeftMoneyCell : UITableViewCell
 
-@property (nonatomic, strong) KPBeLeftMoneyRowData *rowData;
+@property (nonatomic, strong) KPFundsFlow *fundsFlow;
 
 + (instancetype)cellWithTable:(UITableView *)table;
 

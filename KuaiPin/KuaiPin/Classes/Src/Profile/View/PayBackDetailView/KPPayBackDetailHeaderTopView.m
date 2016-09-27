@@ -79,11 +79,11 @@
     self.titleValues[1].text = payBackOrderDetail.orderSn;
     
     // 生成时间
-    self.titleValues[2].text = [NSString dateStrFromTimestamp:payBackOrderDetail.assetsAddTime withFormatter:@"yyyy年MM月dd"];
+    self.titleValues[2].text = [payBackOrderDetail.assetsAddTime dateStrWithFormatter:@"yyyy年MM月dd日"];
     
     // 贴现时间
     if (payBackOrderDetail.subsidyTime) {
-        self.titleValues[3].text = [NSString dateStrFromTimestamp:payBackOrderDetail.subsidyTime withFormatter:@"yyyy年MM月dd"];
+        self.titleValues[3].text = [payBackOrderDetail.subsidyTime dateStrWithFormatter:@"yyyy年MM月dd日"];
     } else {
         self.titleValues[3].text = @"订单未收货";
     }
@@ -101,7 +101,7 @@
         [self addSubview:titleText];
         [self.titleTexeLabs addObject:titleText];
         
-        UILabel *titleValue = [UILabel addLabelWithTitle:[NSString dateStrFromTimestamp:payBackOrderDetail.discountApplicationTime withFormatter:@"yyyy年MM月dd"] textColor:BlackColor font:UIFont_12];;
+        UILabel *titleValue = [UILabel addLabelWithTitle:[payBackOrderDetail.discountApplicationTime dateStrWithFormatter:@"yyyy年MM月dd日"] textColor:BlackColor font:UIFont_12];;
         [self addSubview:titleValue];
         [self.titleValues addObject:titleValue];
         
@@ -110,7 +110,6 @@
             
             [self addSubview:self.payBackStateView];
             self.payBackStateView.image = [UIImage imageNamed:@"processing"];
-            
             
         } else if (payBackOrderDetail.assetsState.integerValue == 3) { // 已贴现
             
@@ -127,10 +126,7 @@
             make.size.mas_equalTo(weakSelf.payBackStateView.image.size);
         }];
     
-}
-    
-    
-    
+    }
     
 }
 - (void)layoutSubviews

@@ -359,7 +359,7 @@
 
     __weak typeof (self) weakSelf = self;
 
-    [KPNetworkingTool BalanceQuerySuccess:^(id result) {
+    [KPNetworkingTool BalanceQueryWithWater:nil success:^(id result) {
         
         weakSelf.balanceResult = [KPBalanceResult mj_objectWithKeyValues:result[@"data"]];
         

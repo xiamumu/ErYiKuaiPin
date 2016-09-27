@@ -18,6 +18,8 @@
 {
     if (self = [super initWithFrame:frame]) {
         
+        self.height = 35;
+        
         UIImageView *headerImage = [[UIImageView alloc] init];
         headerImage.image = [UIImage imageNamed:@"title_bg"];
         [self addSubview:headerImage];

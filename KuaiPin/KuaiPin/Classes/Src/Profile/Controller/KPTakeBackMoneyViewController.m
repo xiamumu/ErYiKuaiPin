@@ -16,6 +16,7 @@
 
 @interface KPTakeBackMoneyViewController ()<UITableViewDataSource, UITableViewDelegate>
 
+
 @property (nonatomic, weak) UITableView *table;
 @property (nonatomic, strong) NSMutableArray *bandCards;
 @property (nonatomic, weak) KPSecretCodeView *secretVodeView;
@@ -34,6 +35,7 @@
     }
     return _bandCards;
 }
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -90,6 +92,11 @@
     [self.view addSubview:table];
     self.table = table;
     
+  
+ 
+
+ 
+
     UITapGestureRecognizer *gestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hideKeyboard)];
     gestureRecognizer.cancelsTouchesInView = NO;
     [table addGestureRecognizer:gestureRecognizer];
@@ -169,7 +176,7 @@
     authenticationVc.popToVC = self;
     [self.navigationController pushViewController:authenticationVc animated:YES];
 }
-// 提交
+// 确定提交
 - (void)submitAction
 {
     KPSecretCodeView *secretVodeView = [[KPSecretCodeView alloc] initWithFrame:self.view.bounds];

@@ -102,7 +102,7 @@
             make.left.mas_equalTo(weakSelf).offset(CommonMargin);
             make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
             make.top.mas_equalTo(imgView.mas_bottom);
-            make.height.mas_equalTo(1);
+            make.height.mas_equalTo(0.5);
         }];
         
         [storeAvatar mas_makeConstraints:^(MASConstraintMaker *make) {

@@ -54,6 +54,10 @@
     [self setupUI];
 
     self.navigationItem.title = @"邀请有奖";
+    
+    
+    // 统计邀请有奖被点击的次数
+    [KPStatisticsTool event:@"invitation_id"];
 }
 
 - (void)didReceiveMemoryWarning {

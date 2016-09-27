@@ -110,7 +110,7 @@
     self.orderNum.text = [NSString stringWithFormat:@"凭证号：%@", payBackOrder.assetsSn];
     
     // 设置订单生成时间
-    self.orderBeginTime.text = [NSString stringWithFormat:@"生成时间：%@", [NSString dateStrFromTimestamp:payBackOrder.assetsAddTime withFormatter:@"yyyy年MM月dd日"]];
+    self.orderBeginTime.text = [NSString stringWithFormat:@"生成时间：%@", [payBackOrder.assetsAddTime dateStrWithFormatter:@"yyyy年MM月dd日"]];
     
     // 设置贴现金额样式
     NSString *text = [NSString stringWithFormat:@"贴现金额：%.2f",[payBackOrder.subsidyPrice floatValue]];
@@ -127,7 +127,7 @@
         {
             if (payBackOrder.subsidyTime) {
                 
-                self.commonLab.text = [NSString stringWithFormat:@"贴现时间：%@",[NSString dateStrFromTimestamp:payBackOrder.subsidyTime withFormatter:@"yyyy年MM月dd日"]];
+                self.commonLab.text = [NSString stringWithFormat:@"贴现时间：%@",[payBackOrder.assetsAddTime dateStrWithFormatter:@"yyyy年MM月dd日"]];
                 
             } else {
                 

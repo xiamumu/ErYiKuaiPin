@@ -32,6 +32,8 @@
     self = [super initWithFrame:frame];
     if (self) {
         
+        self.backgroundColor = BaseColor;
+        
         // 1、创建bannerView
         SDCycleScrollView *bannerView = [SDCycleScrollView cycleScrollViewWithFrame:CGRectMake(0, 0, SCREEN_W, ScaleHeight(230)) delegate:self placeholderImage:nil];
         bannerView.backgroundColor = BaseColor;

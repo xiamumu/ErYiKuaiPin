@@ -7,8 +7,8 @@
 //
 
 #import "KPSecretCodeView.h"
-
 #import "KPPayPwdTextField.h"
+#import "KPChangePayPwdParam.H"
 
 @interface KPSecretCodeView ()
 
@@ -60,7 +60,7 @@
         
         KPButton *cancleBtn = [[KPButton alloc] init];
         [cancleBtn setBackgroundImage:[UIImage imageNamed:@"close"] forState:UIControlStateNormal];
-        [cancleBtn addTarget:self action:@selector(cancleBtnAction) forControlEvents:UIControlEventTouchUpInside];
+        [cancleBtn addTarget:self action:@selector(removeSelf) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:cancleBtn];
         self.cancleBtn = cancleBtn;
         
@@ -92,15 +92,50 @@
         KPPayPwdTextField *pwdTf = [[KPPayPwdTextField alloc] init];
         __weak typeof(self) weakSelf = self;
         [pwdTf setInputCompletion:^(NSString *payPwd) {
-            if (weakSelf.completion) {
-                weakSelf.completion();
-            }
+            [weakSelf checkPayPwdWithPayPwd:payPwd completion:weakSelf.completion];
         }];
         [self addSubview:pwdTf];
         self.pwdTf = pwdTf;
         
     }
     return self;
+}
+
+- (void)checkPayPwdWithPayPwd:(NSString *)payPwd completion:(void (^)())completion{
+    
+    if (payPwd.length != 6) {
+        [KPProgressHUD showErrorWithStatus:@"请输入6位支付密码"];
+        return;
+    }
+    
+    KPChangePayPwdParam *param = [KPChangePayPwdParam param];
+    param.payPassword = payPwd;
+    WHYNSLog(@"%@", param.token);
+    
+    __weak typeof (self) weakSelf = self;
+    [KPNetworkingTool checkPayPwdWithParam:param success:^(id result) {
+        
+        NSInteger code = [result[@"code"] integerValue];
+        
+        if (code == 10011) {
+            [KPProgressHUD showErrorWithStatus:@"密码错误"];
+            [weakSelf.pwdTf clearPayPwd];
+            return;
+        }
+        
+        if (code != 0) {
+            WHYNSLog(@"%zd -- %@", code, result[@"message"]);
+            return;
+        }
+        
+        if (completion) {
+            completion();
+        }
+        
+    } failure:^(NSError *error) {
+        WHYNSLog(@"%@", error);
+    }];
+    
 }
 
 - (void)setTakeBackVc:(BOOL)takeBackVc
@@ -116,10 +151,6 @@
     }
 }
 
-- (void)cancleBtnAction
-{
-    [self removeFromSuperview];
-}
 - (void)removeSelf
 {
     [self removeFromSuperview];

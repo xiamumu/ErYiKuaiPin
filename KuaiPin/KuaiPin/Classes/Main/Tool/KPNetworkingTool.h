@@ -98,8 +98,9 @@
                 failure:(void (^)(NSError *error))failure;
 
 /** 查询用户零钱 */
-+ (void)BalanceQuerySuccess:(void (^)(id result))success
-                    failure:(void (^)(NSError *error))failure;
++ (void)BalanceQueryWithWater:(NSString *)water
+                      success:(void (^)(id result))success
+                      failure:(void (^)(NSError *error))failure;
 
 /** 用零钱支付 */
 + (void)BalancePayParam:(KPBalancePayParam *)param
@@ -118,9 +119,9 @@
 
 #pragma mark - 绑定银行卡相关请求
 /** 银行卡解绑 */
-+ (void)bankCardDeleteWithId:(NSInteger)bankCardId
-                     success:(void (^)(id result))success
-                     failure:(void (^)(NSError *error))failure;
++ (void)bankCardDeleteWithNumber:(NSInteger)bankCardNumber
+                         success:(void (^)(id result))success
+                         failure:(void (^)(NSError *error))failure;
 
 /** 银行卡列表 */
 + (void)bankCardListSuccess:(void (^)(id result))success
@@ -143,12 +144,15 @@
 /**
  *  获取发现列表
  */
-+ (void)discoveryWithSuccess:(void (^)(id result))success failure:(void (^)(NSError *error))failure;
++ (void)discoveryWithSuccess:(void (^)(id result))success
+                     failure:(void (^)(NSError *error))failure;
 
 /**
  *  上传用户头像请求
  */
-+ (void)uploadUserIconWithParam:(KPUploadParam *)param success:(void(^)(id result))success failure:(void(^)(NSError *error))failure;
++ (void)uploadUserIconWithParam:(KPUploadParam *)param
+                        success:(void(^)(id result))success
+                        failure:(void(^)(NSError *error))failure;
 
 
 

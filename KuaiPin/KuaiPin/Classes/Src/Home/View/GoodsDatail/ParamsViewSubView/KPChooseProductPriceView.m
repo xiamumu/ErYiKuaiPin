@@ -12,6 +12,8 @@
 
 @property (nonatomic, weak) UILabel *priceLab;
 
+@property (nonatomic, weak) UIView *topLine;
+
 @end
 
 @implementation KPChooseProductPriceView
@@ -40,6 +42,18 @@
             make.left.mas_equalTo(GPrrceLab.mas_right).offset(12);
             make.top.mas_equalTo(GPrrceLab);
         }];
+        
+        UIView *topLine = [UIView line];
+        [self addSubview:topLine];
+        self.topLine = topLine;
+        
+        [topLine mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.bottom.mas_equalTo(self);
+            make.left.mas_equalTo(self).offset(CommonMargin);
+            make.right.mas_equalTo(self).offset(-CommonMargin);
+            make.height.mas_equalTo(1);
+        }];
+
     }
     return self;
 }

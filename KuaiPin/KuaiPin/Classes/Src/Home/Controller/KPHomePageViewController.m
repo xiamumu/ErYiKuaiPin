@@ -30,7 +30,6 @@
 
 @property (nonatomic, weak) KPHomePageHeaderView *headerView;
 
-// 里面装着KPHomeRowFrame模型
 @property (nonatomic, strong) KPHomeData *homeData;
 
 @property (nonatomic, weak) KPButton *topBtn;
@@ -97,17 +96,17 @@
     tableView.delegate = self;
     tableView.dataSource = self;
     tableView.backgroundColor = BaseColor;
-    tableView.tableFooterView = [[UIView alloc] init];
+//    tableView.tableFooterView = [[UIView alloc] init];
     tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     tableView.showsVerticalScrollIndicator = NO;
-    tableView.rowHeight = ScaleHeight(204);
+    tableView.rowHeight = ScaleHeight(210);
     [self.view addSubview:tableView];
     self.tableView = tableView;
     
     tableView.mj_header = [MJRefreshNormalHeader headerWithRefreshingTarget:self refreshingAction:@selector(refeshHeaderAction)];
     
     KPHomePageHeaderView *headerView = [KPHomePageHeaderView new];
-    headerView.frame = CGRectMake(0, 0, SCREEN_W, ScaleHeight(370));
+    headerView.frame = CGRectMake(0, 0, SCREEN_W, ScaleHeight(379));
     tableView.tableHeaderView = headerView;
     self.headerView = headerView;
     
@@ -172,8 +171,7 @@
         
         KPInviteViewController *invite = [KPInviteViewController new];
         [weakSelf.navigationController pushViewController:invite animated:YES];
-        // 统计邀请有奖被点击次数
-        [KPStatisticsTool event:@"invitation_id"];
+        
     }];
     
     // 右边下面的新手特权点击事件
@@ -212,16 +210,7 @@
     commonNavigationBar.searchBar.placeholder = @"搜索商品名";
     commonNavigationBar.messageBtnAction = ^{
         
-        if (!IsLogin) {
-            KPLoginRegisterViewController *loginVc = [[KPLoginRegisterViewController alloc] init];
-            KPNavigationController *nav = [[KPNavigationController alloc] initWithRootViewController:loginVc];
-            [weakSelf presentViewController:nav animated:YES completion:nil];
-        }
-        else
-        {
-            KPMessageViewController *messageVc = [KPMessageViewController sharedMessageViewController];
-            [weakSelf.navigationController pushViewController:messageVc animated:YES];
-        }
+        [weakSelf jumpToMessageController];
     };
     [self.view addSubview:commonNavigationBar];
     self.commonNavigationBar = commonNavigationBar;
@@ -232,6 +221,19 @@
     [commonNavigationBar setBarBackgroundColorWithColor:ClearColor];
 }
 
+- (void)jumpToMessageController
+{
+    if (!IsLogin) {
+        KPLoginRegisterViewController *loginVc = [[KPLoginRegisterViewController alloc] init];
+        KPNavigationController *nav = [[KPNavigationController alloc] initWithRootViewController:loginVc];
+        [self presentViewController:nav animated:YES completion:nil];
+    }
+    else
+    {
+        KPMessageViewController *messageVc = [KPMessageViewController sharedMessageViewController];
+        [self.navigationController pushViewController:messageVc animated:YES];
+    }
+}
 // 添加回滚按钮
 - (void)setupTopBtn
 {
@@ -323,6 +325,8 @@
     // 搜索商品
     NSAddObserver(seacrchGoodsAction:, Noti_SearchGoods)
     
+//    NSAddObserver(JPUSHAction:, Noti_JPUSHService)
+    
     
     [self setupMessageCount];
     
@@ -354,6 +358,14 @@
     [self.navigationController pushViewController:goodsListVc animated:YES];
     
 }
+
+// 极光推送事件
+//- (void)JPUSHAction:(NSNotification *)noti
+//{
+//    NSDictionary *alert = noti.object;
+//    WHYNSLog(@"---------JPUSHAction alert:%@-----", alert);
+//    [self jumpToMessageController];
+//}
 #pragma mark - 获取购物车商品数量
 - (void)setupSubsidizeCount
 {
@@ -380,7 +392,6 @@
 #pragma mark - Table view data source
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
-    
     return self.homeData.brandList.count == 0 ? 10 : self.homeData.brandList.count;
 }
 
@@ -398,6 +409,13 @@
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
 {
     return CommonMargin;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
+{
+    UIView *sectionHeaderView = [UIView new];
+    sectionHeaderView.backgroundColor = BaseColor;
+    return sectionHeaderView;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath

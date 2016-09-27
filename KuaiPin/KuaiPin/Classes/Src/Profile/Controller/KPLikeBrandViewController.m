@@ -14,14 +14,30 @@
 #import "KPAlertController.h"
 #import "KPCollectStoreParam.h"
 #import "KPCollectionStoreListParam.h"
+#import "KPWithoutAnythingView.h"
 #import "KPBrand.h"
 
 @interface KPLikeBrandViewController ()<UITableViewDataSource, UITableViewDelegate>
 @property (nonatomic, weak) UITableView *table;
 @property (nonatomic, strong) NSMutableArray *brands;
+@property (nonatomic, weak) KPWithoutAnythingView *withoutAnythingView;
 @end
 
 @implementation KPLikeBrandViewController
+
+
+- (KPWithoutAnythingView *)withoutAnythingView
+{
+    if (_withoutAnythingView == nil) {
+        KPWithoutAnythingView *withoutView = [[KPWithoutAnythingView alloc] init];
+        withoutView.frame = CGRectMake(0, 100, SCREEN_W, 300);
+        withoutView.message = @"您还没有关注过品牌，快去关注吧！";
+        [self.view insertSubview:withoutView atIndex:0];
+        _withoutAnythingView = withoutView;
+    }
+    return _withoutAnythingView;
+}
+
 
 - (NSMutableArray *)brands
 {
@@ -77,13 +93,15 @@
 
 - (void)setupTable
 {
-    UITableView *table = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, SCREEN_W, SCREEN_H) style:UITableViewStylePlain];
+    self.view.backgroundColor = WhiteColor;
+    CGFloat top = Absolute_Y ? 0 : 64;
+    UITableView *table = [[UITableView alloc] initWithFrame:CGRectMake(0, top, SCREEN_W, SCREEN_H) style:UITableViewStylePlain];
     table.delegate = self;
     table.dataSource = self;
     table.showsVerticalScrollIndicator = NO;
     table.separatorStyle = UITableViewCellAccessoryNone;
     table.tableFooterView = [[UIView alloc] init];
-    table.backgroundColor = ViewBgColor;
+    table.backgroundColor = ClearColor;
     table.rowHeight = 80;
     [self.view addSubview:table];
     self.table = table;
@@ -125,6 +143,7 @@
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
     self.navigationItem.rightBarButtonItem.enabled = (self.brands.count != 0);
+    self.withoutAnythingView.hidden = (self.brands.count != 0);
     return self.brands.count;
 }
 

@@ -45,6 +45,6 @@
 /// @return 是否是汉字
 - (BOOL)isHans;
 
-+ (NSString *)dateStrFromTimestamp:(NSString *)timeStamp withFormatter:(NSString *)formatter;
+- (NSString *)dateStrWithFormatter:(NSString *)formatter;
 
 @end

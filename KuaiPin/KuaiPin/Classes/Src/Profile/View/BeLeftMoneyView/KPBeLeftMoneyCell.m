@@ -45,10 +45,10 @@
     return self;
 }
 
-- (void)setRowData:(KPBeLeftMoneyRowData *)rowData
+- (void)setFundsFlow:(KPFundsFlow *)fundsFlow
 {
-    _rowData = rowData;
-    self.beLeftMoneyContentViwe.rowData = rowData;
+    _fundsFlow = fundsFlow;
+    self.beLeftMoneyContentViwe.fundsFlow = fundsFlow;
 }
 
 @end

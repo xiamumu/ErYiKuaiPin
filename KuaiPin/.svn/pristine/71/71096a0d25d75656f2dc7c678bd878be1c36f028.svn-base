@@ -1,0 +1,180 @@
+//
+//  PrefixHeader.pch
+//  KuaiPin
+//
+//  Created by 21_xm on 16/4/26.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//
+
+#ifndef PrefixHeader_pch
+#define PrefixHeader_pch
+
+#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+
+#import "UIView+Extension.h"
+#import "UIColor+KPExtension.h"
+#import "KPTestViewController.h"
+#import "KPConstString.h"
+#import "KPProgressHUD.h"
+#import "KPUserManager.h"
+#import "KPAlertController.h"
+#import "KPSeparatorView.h"
+#import "UILabel+XM.h"
+#import "UIImage+XM.h"
+#import "KPNetworkingTool.h"
+#import "KPButton+KPExtension.h"
+#import "NSString+KPExtension.h"
+#import "NSArray+KPExtension.h"
+#import "KPCommon.h"
+#import "KPStatisticsTool.h"
+#import "UIControl+KPExtension.h"
+
+#import <UIImageView+WebCache.h>
+#import <Masonry.h>
+#import <AutoCoding.h>
+#import <MLeaksFinder.h>
+#import <MJRefresh.h>
+
+
+// 屏幕宽高
+#define SCREEN_W [UIScreen mainScreen].bounds.size.width
+#define SCREEN_H [UIScreen mainScreen].bounds.size.height
+// 设备尺寸
+#define iPhone6 (SCREEN_W==375)
+#define iPhone5 (SCREEN_W==320)
+// 比例高度
+#define ScaleHeight(height) (SCREEN_W * (height/375.0))
+#define ScaleWidth(width) (SCREEN_H * (width/667.0))
+#define WidthAndHeightScale (667.0/375)
+
+// 字体大小
+#define UIFont_9 [UIFont systemFontOfSize:9]
+#define UIFont_10 [UIFont systemFontOfSize:10]
+#define UIFont_11 [UIFont systemFontOfSize:11]
+#define UIFont_12 [UIFont systemFontOfSize:12]
+#define UIFont_13 [UIFont systemFontOfSize:13]
+#define UIFont_14 [UIFont systemFontOfSize:14]
+#define UIFont_15 [UIFont systemFontOfSize:15]
+#define UIFont_16 [UIFont systemFontOfSize:16]
+#define UIFont_17 [UIFont systemFontOfSize:17]
+#define UIFont_18 [UIFont systemFontOfSize:18]
+#define UIFont_19 [UIFont systemFontOfSize:19]
+#define UIFont_20 [UIFont systemFontOfSize:20]
+#define UIFont_21 [UIFont systemFontOfSize:21]
+#define UIFont_22 [UIFont systemFontOfSize:22]
+#define UIFont_23 [UIFont systemFontOfSize:23]
+#define UIFont_24 [UIFont systemFontOfSize:24]
+#define UIFont_25 [UIFont systemFontOfSize:25]
+#define UIFont_26 [UIFont systemFontOfSize:26]
+#define UIFont_27 [UIFont systemFontOfSize:27]
+#define UIFont_28 [UIFont systemFontOfSize:28]
+#define UIFont_29 [UIFont systemFontOfSize:29]
+#define UIFont_30 [UIFont systemFontOfSize:30]
+
+// frame参数
+#define CommonMargin (9)
+
+//通知中心
+#define NSNotificationDefaultCenter [NSNotificationCenter defaultCenter]
+#define NSRemoveObserver [[NSNotificationCenter defaultCenter] removeObserver:self];
+#define NSPostNote(name, obj) [[NSNotificationCenter defaultCenter] postNotificationName:name object:obj];
+#define NSRemoveObserverWithName(NoteName) [[NSNotificationCenter defaultCenter] removeObserver:self name:NoteName object:nil];
+#define NSPostNoteWithUserInfo(name, obj, info) [[NSNotificationCenter defaultCenter] postNotificationName:name object:obj userInfo:info];
+#define NSAddObserver(method, NotoName) [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(method) name:NotoName object:nil];
+// 推送
+#define Noti_JPUSHService @"Noti_JPUSHService"
+// 产品相关
+#define Noti_CellMoreBtnAction @"CellMoreBtnAction"
+#define Noti_CheckGoodsDetailAction @"CheckGoodsDetailAction"
+#define Noti_CommonScorllViewDidSelected @"Noti_CommonScorllViewDidSelected"
+#define Noti_MessageBtnAction @"MessageBtnAction"
+#define Noti_JumpToSubsidize @"JumpToSubsidize"
+#define Noti_ProfileItemTapAction @"ProfileItemTapAction"
+#define Noti_ShopAddGoodsToSubsidize @"Noti_ShopAddGoodsToSubsidize"
+#define Noti_CheckShopGoodsDetail @"Noti_CheckShopGoodsDetail"
+#define Noti_SearchGoods @"Noti_SearchGoods"
+#define Noti_ChooseProductParam @"Noti_ChooseProductParam"
+#define Noti_ChooseProductSpec @"Noti_ChooseProductSpec"
+#define Noti_AddToSubsidizeParam @"Noti_AddToSubsidizeParam"
+#define Noti_SaveSpecModel @"Noti_SaveSpecModel"
+/** G库 */
+#define Noti_SelectedGoodBtnAction @"SelectedGoodBtnAction"
+#define Noti_SelectedAllGoodsBtnAction @"SelectedAllGoodsBtnAction"
+#define Noti_SelectedVendorAllGoodsBtnAction @"SelectedVendorAllGoodsBtnAction"
+#define Noti_ChangeGoodNumAction @"ChangeGoodNumAction"
+#define Noti_CheckOthers @"Noti_CheckOthers"
+#define Noti_Receive @"Noti_Receive"
+#define Noti_ChooseName @"Noti_ChooseName"
+#define Noti_LookUpOtherGood @"Noti_LookUpOtherGood"
+#define Noti_SelectedSpecId @"Noti_SelectedSpecId"
+/** 地址相关 */
+#define Noti_AddressManagerClickEditButton @"AddressManagerClickEditButton"
+#define Noti_AddressManagerClickDeleteButton @"AddressManagerClickDeleteButton"
+#define Noti_AddressManagerClickDefaultAddressButton @"AddressManagerClickDefaultAddressButton"
+#define Noti_AddressListVcReloadData @"Noti_AddressListVcReloadData"
+//#define Noti_AddressChangeReceiver @"Noti_AddressChangeReceiver"
+/** 消费资产相关 */
+#define Noti_PayBackOrderDetail @"Noti_PayBackOrderDetail"
+#define Noti_PayBackApply @"Noti_PayBackApply"
+/** 余额相关 */
+#define Noti_TakeBackMoney @"Noti_TakeBackMoney"
+#define Noti_FillInMoney @"Noti_FillInMoney"
+#define Noti_plusBankCard @"Noti_plusBankCard"
+#define Noti_TakeBackMoneySubmit @"Noti_TakeBackMoneySubmit"
+/** ProfileHeader修改用户名、头像 */
+#define Noti_ChangeUsername @"Noti_ChangeUsername"
+#define Noti_ChangeUserIconImage @"Noti_ChangeUserIconImage"
+#define Noti_UserIconImageDidClick @"Noti_UserIconImageDidClick"
+#define Noti_AccountManagerAction @"Noti_AccountManagerAction"
+/** 支付方式 */
+#define Noti_CheckJDPayCompletion @"Noti_CheckJDPayCompletion"
+#define Noti_ChangePayment @"Noti_ChangePayment"
+#define WexinPaymentTag 1001
+#define BankCardPaymentTag 1002
+#define AliPaymentTag 1003
+#define BalancePaymentTag 1004
+#define JDPaymentTag 1005
+
+/** 登录注册相关 */
+#define Noti_LoginRegistDismiss @"Noti_LoginRegistDismiss"
+#define Noti_LoginSuccess @"Noti_LoginSuccess"
+#define Noti_Relogin @"Noti_Relogin"
+/** 刷新银行卡列表 */
+#define Noti_RefreshBankCardList @"Noti_RefreshBankCardList"
+/** 刷新订单数据 */
+#define Noti_RefreshOrders @"Noti_RefreshOrders"
+/** 订单 */
+#define Noti_OrderCompletion @"Noti_OrderCompletion"
+#define Noti_PayTimeOut @"Noti_PayTimeOut"
+#define Noti_LookUpLogisticsInfo @"Noti_LookUpLogisticsInfo"
+/** 根控制器切换 */
+
+
+#define Absolute_Y !![self.navigationController.navigationBar backgroundImageForBarMetrics:UIBarMetricsDefault]
+
+// 是否登录
+#define IsLogin [KPUserManager sharedUserManager].userModel.token
+
+// 快捷方法
+#define CODE [result[@"code"] integerValue]
+#define VersionKey @"VersionKey"
+
+//宏定义方法
+#pragma mark - 宏定义方法
+//#if defined(DEBUG)||defined(_DEBUG)
+#define WHYNSLog(format, ...)   do { NSString *exFormat = @"<%@ : %d> %s\n";                                                \
+                                NSString *newFormat = [exFormat stringByAppendingString:format];                            \
+                                (NSLog)((newFormat), [ [ NSString stringWithUTF8String:__FILE__] lastPathComponent],        \
+                                                                                    __LINE__, __func__, ##__VA_ARGS__);     \
+                                } while (0)
+//#else
+//#define WHYNSLog(format, ...)
+//#endif
+
+#define DocumentsDirectory [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject]
+#define DocumentPathWithFileName(fileName) [DocumentsDirectory stringByAppendingPathComponent:fileName]
+#define SelfClassStr NSStringFromClass([self class])
+
+
+#endif /* PrefixHeader_pch */

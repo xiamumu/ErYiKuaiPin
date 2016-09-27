@@ -13,14 +13,15 @@
 #import "KPTakeBackMoneyViewController.h"
 #import "KPNetworkingTool.h"
 #import "KPBalanceResult.h"
+#import "KPCommonMarginView.h"
 
 @interface KPBeLeftMoneyViewController ()<UITableViewDataSource, UITableViewDelegate>
 
 @property (nonatomic, weak) UITableView *table;
 
-@property (nonatomic, strong) NSMutableArray *rowDatas;
-
 @property (nonatomic, weak) KPBeLeftMoneyHeaderView *headerView;
+
+@property (nonatomic, weak) KPCommonMarginView *marginView;
 
 @property (nonatomic, strong) KPBalanceResult *balanceResult;
 
@@ -29,13 +30,6 @@
 @implementation KPBeLeftMoneyViewController
 
 #pragma mark - 懒加载
-- (NSMutableArray *)rowDatas
-{
-    if (_rowDatas == nil) {
-        _rowDatas = [NSMutableArray array];
-    }
-    return _rowDatas;
-}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -54,7 +48,8 @@
 - (void)setupTableView
 {
     self.automaticallyAdjustsScrollViewInsets = NO;
-    UITableView *table = [[UITableView alloc] initWithFrame:CGRectMake(0, 64, SCREEN_W, SCREEN_H) style:UITableViewStyleGrouped];
+    CGFloat top = Absolute_Y ? 0 : 64;
+    UITableView *table = [[UITableView alloc] initWithFrame:CGRectMake(0, top, SCREEN_W, SCREEN_H) style:UITableViewStyleGrouped];
     table.delegate = self;
     table.dataSource = self;
     table.tableFooterView = [[UIView alloc] init];
@@ -64,24 +59,29 @@
     [self.view addSubview:table];
     self.table = table;
     
+    
+    CGFloat height = SCREEN_W > 360? 200 - CommonMargin : 200;
+    KPBeLeftMoneyHeaderView *headerView = [[KPBeLeftMoneyHeaderView alloc] init];
+    headerView.frame = CGRectMake(0, 0, SCREEN_W, height);
+    table.tableHeaderView = headerView;
+    self.headerView = headerView;
+    
 }
 
 #pragma mark - 请求数据
 - (void)setupData
 {
     __weak typeof (self) weakSelf = self;
-    [KPNetworkingTool BalanceQuerySuccess:^(id result) {
+    [KPNetworkingTool BalanceQueryWithWater:@"y" success:^(id result) {
         
-        
+        WHYNSLog(@"%@", result);
         weakSelf.balanceResult = [KPBalanceResult mj_objectWithKeyValues:result[@"data"]];
-        
         
         weakSelf.headerView.balance = weakSelf.balanceResult.balance;
         
-        
-    } failure:^(NSError *error) {
-        
-    }];
+        [weakSelf.table reloadData];
+    } failure:^(NSError *error) { }];
+    
 }
 
 #pragma mark - 接收通知及事件
@@ -109,37 +109,37 @@
     [self.navigationController pushViewController:takeBackVc animated:YES];
 }
 #pragma mark - UITableViewDelegate, UITableViewDataSource
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
-{
-    return 1;
-}
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    return self.rowDatas.count;
+    return self.balanceResult.water.count;
+//    return 5;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     KPBeLeftMoneyCell *cell = [KPBeLeftMoneyCell cellWithTable:tableView];
-    cell.rowData = self.rowDatas[indexPath.row];
+    cell.fundsFlow = self.balanceResult.water[indexPath.row];
     return cell;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
 {
-    CGFloat height = SCREEN_W > 360? 235 - CommonMargin : 235;
-    return height;
+    return 35;
 }
+
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
-    KPBeLeftMoneyHeaderView *headerView = [[KPBeLeftMoneyHeaderView alloc] init];
-    self.headerView = headerView;
-    return headerView;
+    KPCommonMarginView *marginView = [[KPCommonMarginView alloc] init];
+    marginView.title = @"余额明细";
+    return marginView;
 }
-- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
-{
-    return 0.001;
-}
+
+
+
+//- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
+//{
+//    return 0.001;
+//}
 
 - (void)dealloc
 {

@@ -65,7 +65,7 @@
     self.imgView.image = [UIImage imageNamed:message.imgStr];
     self.title.text = message.titleText;
     self.detailLab.text = message.content;
-    self.time.text = [NSString dateStrFromTimestamp:message.titleText withFormatter:@"MM月dd日"];
+    self.time.text = [message.titleText dateStrWithFormatter:@"MM月dd日"];
 }
 
 - (void)layoutSubviews

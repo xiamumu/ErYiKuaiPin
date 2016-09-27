@@ -27,5 +27,10 @@
  */
 @property (nonatomic, strong) NSNumber *freezeBalance;
 
+/**
+ 资金流水
+ */
+@property (nonatomic, strong) NSArray *water;
+
 
 @end

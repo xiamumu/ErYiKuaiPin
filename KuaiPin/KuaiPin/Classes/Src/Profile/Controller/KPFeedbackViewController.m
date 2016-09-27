@@ -15,10 +15,10 @@
 @property (weak, nonatomic) IBOutlet UILabel *alertTextLab;
 @property (nonatomic, weak) NSString *textViewText;
 
+
 @end
 
 @implementation KPFeedbackViewController
-
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.automaticallyAdjustsScrollViewInsets = NO;

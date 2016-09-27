@@ -1,0 +1,183 @@
+//
+//  KPMessageViewController.m
+//  KuaiPin
+//
+//  Created by 21_xm on 16/5/4.
+//  Copyright © 2016年 21_xm. All rights reserved.
+//  消息页面
+
+// controller
+#import "KPMessageViewController.h"
+#import "KPPayBackDetailViewController.h"
+#import "KPOrderDetailViewController.h"
+#import "KPBaseOrderViewController.h"
+#import "UIBarButtonItem+XM.h"
+
+// view
+// cell
+#import "KPMessaageTableViewCell.h"
+
+// model
+#import "KPMessage.h"
+#import "KPMessageParam.h"
+
+@interface KPMessageViewController ()<UITableViewDataSource, UITableViewDelegate>
+@property (nonatomic, weak) UITableView *table;
+/**
+ *  装着 KPMessage 模型
+ */
+@property (nonatomic, strong) NSArray *messages;
+
+@end
+
+@implementation KPMessageViewController
+
+singleton_implementation(MessageViewController);
+
+- (NSArray *)messages
+{
+    if (_messages == nil) {
+        _messages = [NSArray array];
+    }
+    return _messages;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = WhiteColor;
+    self.title = @"我的消息";
+    
+    // 添加table
+    [self setupTable];
+    
+//    [self setupNavigationBar];
+    
+    // 请求消息数据
+    [self setupData];
+    
+}
+
+#pragma mark - setupUI
+- (void)setupTable
+{
+    self.automaticallyAdjustsScrollViewInsets = NO;
+    
+    CGFloat y = Absolute_Y ? 0 : 64;
+    UITableView *table = [[UITableView alloc] initWithFrame:CGRectMake(0, y, SCREEN_W, SCREEN_H) style:UITableViewStylePlain];
+    table.delegate = self;
+    table.dataSource = self;
+    table.showsVerticalScrollIndicator = NO;
+    table.separatorStyle = UITableViewCellAccessoryNone;
+    table.backgroundColor = ViewBgColor;
+    [self.view addSubview:table];
+    self.table = table;
+}
+- (void)setupNavigationBar {
+
+    self.navigationItem.leftBarButtonItem = [UIBarButtonItem itemWithImageName:@"close"
+                                                                 highImageName:nil
+                                                             selectedImageName:nil
+                                                                         targe:self
+                                                                        action:@selector(clickCloseButton)];
+    
+    
+}
+
+- (void)clickCloseButton {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+#pragma mark - setupData
+- (void)setupData
+{
+    __weak typeof (self) weakSelf = self;
+    [KPNetworkingTool GetAllMessageSuccess:^(id result) {
+        
+        if (CODE != 0) return;
+        
+        weakSelf.messages = [KPMessage mj_objectArrayWithKeyValuesArray:result[@"data"][@"messages"]];
+        [weakSelf.table reloadData];
+        
+    } failure:^(NSError *error) {
+        
+        WHYNSLog(@"---------失败%@", error);
+    }];
+}
+
+#pragma mark - UITableViewDataSource UITableViewDelegate
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return self.messages.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    KPMessaageTableViewCell *cell = [KPMessaageTableViewCell cellWithTable:tableView];
+    cell.message = self.messages[indexPath.row];
+    return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 65;
+}
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
+    KPMessage *message = self.messages[indexPath.row];
+    
+    __weak typeof (self) weakSelf = self;
+    [KPNetworkingTool GetOneMessage:message.messageId Success:^(id result) {
+        
+        if (CODE != 0) return;
+        
+        KPMessage *message = [KPMessage mj_objectWithKeyValues:result[@"data"][@"message"]];
+        
+        switch (message.messageType) {
+            case KPMessageTypeShopingMessage:     // 购物消息
+            {
+                KPOrderDetailViewController *orderDetailVc = [[KPOrderDetailViewController alloc] init];
+                orderDetailVc.orderSn = message.sn;
+                [weakSelf.navigationController pushViewController:orderDetailVc animated:YES];
+            }
+                break;
+            case KPMessageTypeReceiveOrderMessage:     // 收货消息
+            {
+                KPBaseOrderViewController *baseOrderVc = [[KPBaseOrderViewController alloc] init];
+                baseOrderVc.selectedPageIndex = 1;
+                [weakSelf.navigationController pushViewController:baseOrderVc animated:YES];
+                
+            }
+                break;
+            case KPMessageTypePayBack:     // 贴现消息
+            {
+                KPPayBackDetailViewController *payBackDetailVc = [[KPPayBackDetailViewController alloc] init];
+                payBackDetailVc.orderSn  = message.sn;
+                [weakSelf.navigationController pushViewController:payBackDetailVc animated:YES];
+            }
+                break;
+        }
+        
+    } failure:^(NSError *error) { }];
+    
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    KPStatisticsBeginWithViewName(SelfClassStr)
+    self.navigationController.navigationBar.hidden = NO;
+    
+    // 请求消息数据
+    [self setupData];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    KPStatisticsEndWithViewName(SelfClassStr)
+}
+
+- (BOOL)willDealloc {
+    return NO;
+}
+@end

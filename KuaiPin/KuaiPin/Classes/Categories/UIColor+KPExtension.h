@@ -25,7 +25,7 @@
 #define GrayColor HexColor(#8a8a8a)
 #define LightRedColor HexColor(#fa4862)
 #define ViewBgColor HexColor(#f2f2f2)
-#define BaseColor RGBColor(235, 235, 235)
+#define BaseColor HexColor(#f6f6f6)
 #define SeperatorColor HexColor(#dedede)
 
 @interface UIColor (KPExtension)

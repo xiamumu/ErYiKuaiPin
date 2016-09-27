@@ -20,9 +20,6 @@
 
 @property (nonatomic, weak) KPChooseProductNumView *chooseNumView;
 
-@property (nonatomic, weak) UIView *topLine;
-
-@property (nonatomic, weak) UIView *bottomLine;
 
 
 @property (nonatomic, strong) NSMutableArray *singParamViewArr;
@@ -84,40 +81,17 @@
         [choosePriceView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.mas_equalTo(weakSelf).offset(50);
             make.left.right.mas_equalTo(weakSelf);
-            make.height.mas_equalTo(50);
+            make.height.mas_equalTo(49);
         }];
         
         [scrollView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.mas_equalTo(choosePriceView.mas_bottom);
             make.left.right.mas_equalTo(weakSelf);
-            make.bottom.mas_equalTo(weakSelf).offset(-49);
-            make.height.mas_equalTo(255);
-        
+            make.bottom.mas_equalTo(weakSelf).offset(-50);
         }];
         
         // 监听单个选择参数的通知
         NSAddObserver(chooseProductParam:, Noti_ChooseProductParam)
-        
-        UIView *topLine = [UIView line];
-        [self addSubview:topLine];
-        self.topLine = topLine;
-        
-        UIView *bottomLine = [UIView line];
-        [self addSubview:bottomLine];
-        self.bottomLine = bottomLine;
-        
-        [topLine mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.top.mas_equalTo(choosePriceView.mas_bottom);
-            make.left.mas_equalTo(weakSelf).offset(CommonMargin);
-            make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
-            make.height.mas_equalTo(1);
-        }];
-        
-        [bottomLine mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.bottom.mas_equalTo(chooseNumView.mas_top);
-            make.left.mas_equalTo(weakSelf).offset(CommonMargin);
-            make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
-            make.height.mas_equalTo(1);
-        }];
     }
     return self;
 }
@@ -161,13 +135,6 @@
     
 }
 
-- (void)setSpecTitles:(NSArray<KPSpecTitle *> *)specTitles
-{
-    _specTitles = specTitles;
-    
-    BOOL hidden = self.specTitles.count == 0;
-    [self hiddenLines:hidden];
-}
 //**************************************************************//
 // 设置存储的旧参数
 - (void)setOldChooseProductSpec:(KPProductSpec *)oldChooseProductSpec
@@ -238,7 +205,6 @@
             break;
     }
 }
-
 //**************************************************************//
 
 /**
@@ -418,12 +384,6 @@
             break;
     }
     
-}
-
-- (void)hiddenLines:(BOOL)hidden
-{
-    self.topLine.hidden = hidden;
-    self.bottomLine.hidden = hidden;
 }
 
 - (void)dealloc

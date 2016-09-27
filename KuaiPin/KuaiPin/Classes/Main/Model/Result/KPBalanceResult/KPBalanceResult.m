@@ -10,4 +10,8 @@
 
 @implementation KPBalanceResult
 
++ (NSDictionary *)mj_objectClassInArray
+{
+    return @{@"water": @"KPFundsFlow"};
+}
 @end

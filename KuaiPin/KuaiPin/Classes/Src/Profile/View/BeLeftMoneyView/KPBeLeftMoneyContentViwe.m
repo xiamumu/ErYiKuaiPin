@@ -7,11 +7,13 @@
 //
 
 #import "KPBeLeftMoneyContentViwe.h"
+#import "KPFundsFlow.h"
 
 @interface KPBeLeftMoneyContentViwe ()
 @property (nonatomic, weak) UILabel *titleLab;
 @property (nonatomic, weak) UILabel *timeLab;
 @property (nonatomic, weak) UILabel *moneyLab;
+@property (nonatomic, weak) UILabel *stateLab;
 @property (nonatomic, weak) UIView *line;
 
 @end
@@ -22,64 +24,64 @@
     self = [super initWithFrame:frame];
     if (self) {
         
-        UILabel *titleLab = [UILabel addLabelWithTitle:@"" textColor:BlackColor font:UIFont_13];
+        UILabel *titleLab = [UILabel addLabelWithTitle:nil textColor:BlackColor font:UIFont_13];
         [self addSubview:titleLab];
         self.titleLab = titleLab;
         
-        UILabel *timeLab = [UILabel addLabelWithTitle:@"" textColor:HexColor(#8a8a8a) font:UIFont_11];
+        UILabel *timeLab = [UILabel addLabelWithTitle:nil textColor:HexColor(#8a8a8a) font:UIFont_11];
         [self addSubview:timeLab];
         self.timeLab = timeLab;
         
-        UILabel *moneyLab = [UILabel addLabelWithTitle:@"" textColor:OrangeColor font:UIFont_15];
+        UILabel *moneyLab = [UILabel addLabelWithTitle:nil textColor:OrangeColor font:UIFont_15];
         [self addSubview:moneyLab];
         self.moneyLab = moneyLab;
         
-        UIView *line = [[UIView alloc] init];
-        line.backgroundColor = SeperatorColor;
+        UILabel *stateLab = [UILabel addLabelWithTitle:nil textColor:HexColor(#8a8a8a) font:UIFont_12];
+        [self addSubview:stateLab];
+        self.stateLab = stateLab;
+        
+        UIView *line = [UIView line];
         [self addSubview:line];
         self.line = line;
+        
+        __weak typeof (self) weakSelf = self;
+        [titleLab mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.mas_equalTo(weakSelf).offset(CommonMargin);
+            make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
+            make.top.mas_equalTo(weakSelf).offset(CommonMargin);
+        }];
+        
+        [timeLab mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.mas_equalTo(weakSelf.titleLab);
+            make.right.mas_equalTo(weakSelf.titleLab);
+            make.bottom.mas_equalTo(weakSelf).offset(-CommonMargin);
+        }];
+        
+        [stateLab mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
+            make.centerY.mas_equalTo(weakSelf);
+        }];
+        
+        [moneyLab mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.right.mas_equalTo(stateLab.mas_left).offset(-24);
+            make.centerY.mas_equalTo(weakSelf);
+        }];
+        
+        [line mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.right.bottom.mas_equalTo(weakSelf);
+            make.height.mas_equalTo(1);
+        }];
     }
     return self;
 }
 
-- (void)setRowData:(KPBeLeftMoneyRowData *)rowData
+- (void)setFundsFlow:(KPFundsFlow *)fundsFlow
 {
-    _rowData = rowData;
-    self.titleLab.text = rowData.titleText;
-    self.timeLab.text = rowData.timeText;
-    self.moneyLab.text = rowData.moneyText;
+    _fundsFlow = fundsFlow;
+    self.titleLab.text = fundsFlow.type;
+    self.timeLab.text = [fundsFlow.addTime dateStrWithFormatter:@"yyyy年MM月dd日"];
+    self.moneyLab.text = [NSString stringWithFormat:@"￥%@", fundsFlow.money];
+    self.stateLab.text = @"已完成";
 }
 
-- (void)layoutSubviews
-{
-    __weak typeof (self) weakSelf = self;
-
-    CGFloat titleLabH = [self.titleLab.text sizeWithAttributes:@{NSFontAttributeName: self.titleLab.font}].height;
-    [self.titleLab mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.mas_equalTo(weakSelf).offset(CommonMargin);
-        make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
-        make.top.mas_equalTo(weakSelf).offset(CommonMargin);
-        make.height.mas_equalTo(titleLabH);
-    }];
-    
-    CGFloat timeLabH = [self.timeLab.text sizeWithAttributes:@{NSFontAttributeName: self.timeLab.font}].height;
-    [self.timeLab mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.mas_equalTo(weakSelf.titleLab);
-        make.right.mas_equalTo(weakSelf.titleLab);
-        make.bottom.mas_equalTo(weakSelf).offset(-CommonMargin);
-        make.height.mas_equalTo(timeLabH);
-    }];
-    
-    CGFloat moneyLabH = [self.moneyLab.text sizeWithAttributes:@{NSFontAttributeName: self.moneyLab.font}].height;
-    [self.moneyLab mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.right.mas_equalTo(weakSelf).offset(-CommonMargin);
-        make.centerY.mas_equalTo(weakSelf);
-        make.height.mas_equalTo(moneyLabH);
-    }];
-    
-    [self.line mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.right.bottom.mas_equalTo(weakSelf);
-        make.height.mas_equalTo(1);
-    }];
-}
 @end

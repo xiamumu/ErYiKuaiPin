@@ -78,6 +78,9 @@
             KPProfileItem *item = self.items[i];
 //            item.backgroundColor = RandomColor;
             item.frame = CGRectMake(X, 40, W, H);
+            
+            KPProfileItem *lastItem = self.items[3];
+            lastItem.hidden = YES;
         }
         
         

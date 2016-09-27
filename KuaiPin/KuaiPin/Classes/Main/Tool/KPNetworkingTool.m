@@ -54,7 +54,7 @@
 @class KPUserModel;
 
 #if defined(DEBUG)||defined(_DEBUG)
-const char * BaseURL = "http://123.56.72.199:8080";
+const char * BaseURL = "http://60.205.125.191:8080";
 #else
 const char * BaseURL = "http://www.extou.com:8090";
 #endif
@@ -170,9 +170,9 @@ const char * AddBankCardURL = "/union/authentication/";
 const char * BankCardListURL = "/card/";
 
 /**
- 解绑银行卡 username token cardId
+ 解绑银行卡 username token cardNo
  */
-const char * BankCardDeleteURL = "/card/";
+const char * BankCardDeleteURL = "/card/delete";
 
 /**
  *  获取收藏商品列表 POST  参数： 必传：username token
@@ -582,15 +582,15 @@ typedef NS_ENUM(NSUInteger, KPNetworkingMethod) {
 }
 
 /** 银行卡解绑 */
-+ (void)bankCardDeleteWithId:(NSInteger)bankCardId
-                     success:(void (^)(id result))success
-                     failure:(void (^)(NSError *error))failure  {
++ (void)bankCardDeleteWithNumber:(NSInteger)bankCardNumber
+                         success:(void (^)(id result))success
+                         failure:(void (^)(NSError *error))failure  {
 
     KPBaseParam *param = [KPBaseParam param];
-    NSDictionary *dict = [param mj_keyValues];
-    NSString *url = [NSString stringWithFormat:@"%s%zd", BankCardDeleteURL, bankCardId];
-    //        WHYNSLog(@"%@", dict);
-    [[self manager] requestWithMethod:KPNetworkingMethodPost urlString:url.UTF8String parameters:dict success:success failure:failure];
+    NSMutableDictionary *dict = [param mj_keyValues];
+    dict[@"cardNo"] = @(bankCardNumber);
+    WHYNSLog(@"%@", dict);
+    [[self manager] requestWithMethod:KPNetworkingMethodPost urlString:BankCardDeleteURL parameters:dict success:success failure:failure];
 }
 
 /** 银行卡列表 */
@@ -1055,9 +1055,12 @@ typedef NS_ENUM(NSUInteger, KPNetworkingMethod) {
 #pragma mark - 支付相关请求
 
 /** 查询用户零钱 */
-+ (void)BalanceQuerySuccess:(void (^)(id result))success failure:(void (^)(NSError *error))failure
++ (void)BalanceQueryWithWater:(NSString *)water success:(void (^)(id result))success failure:(void (^)(NSError *error))failure
 {
-    [[self manager] requestWithMethod:KPNetworkingMethodPost urlString:BalanceQueryURL parameters:[[KPBaseParam param] mj_keyValues] success:success failure:failure];
+    NSMutableDictionary *param = [[KPBaseParam param] mj_keyValues];
+    param[@"water"] = water;
+    
+    [[self manager] requestWithMethod:KPNetworkingMethodPost urlString:BalanceQueryURL parameters:param success:success failure:failure];
 }
 
 /** 用零钱支付 */

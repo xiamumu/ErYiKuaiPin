@@ -10,7 +10,10 @@
 
 #import "KPBeLeftMoneyRowData.h"
 
+@class KPFundsFlow;
+
 @interface KPBeLeftMoneyContentViwe : UIView
-@property (nonatomic, strong) KPBeLeftMoneyRowData *rowData;
+
+@property (nonatomic, strong) KPFundsFlow *fundsFlow;
 
 @end

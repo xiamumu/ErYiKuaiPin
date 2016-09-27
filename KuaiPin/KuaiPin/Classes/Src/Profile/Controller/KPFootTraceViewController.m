@@ -14,16 +14,29 @@
 #import "KPDatabase.h"
 #import "KPProduct.h"
 #import "KPAlertController.h"
+#import "KPWithoutAnythingView.h"
 
 @interface KPFootTraceViewController ()<UITableViewDataSource, UITableViewDelegate>
 
 @property (nonatomic, weak) UITableView *table;
 @property (nonatomic, strong) NSMutableArray *products;
+@property (nonatomic, weak) KPWithoutAnythingView *withoutAnythingView;
 
 @end
 
 @implementation KPFootTraceViewController
-    
+
+- (KPWithoutAnythingView *)withoutAnythingView
+{
+    if (_withoutAnythingView == nil) {
+        KPWithoutAnythingView *withoutView = [[KPWithoutAnythingView alloc] init];
+        withoutView.frame = CGRectMake(0, 100, SCREEN_W, 300);
+        withoutView.message = @"您还没有浏览过任何商品！";
+        [self.view insertSubview:withoutView atIndex:0];
+        _withoutAnythingView = withoutView;
+    }
+    return _withoutAnythingView;
+}
 #pragma mark - 懒加载
 - (NSMutableArray *)products
 {
@@ -54,12 +67,15 @@
 #pragma mark - setupUI
 - (void)setupTableView
 {
-    UITableView *table = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, SCREEN_W, SCREEN_H) style:UITableViewStyleGrouped];
+    self.view.backgroundColor = WhiteColor;
+    CGFloat top = Absolute_Y ? 0 : 64;
+    UITableView *table = [[UITableView alloc] initWithFrame:CGRectMake(0, top, SCREEN_W, SCREEN_H) style:UITableViewStyleGrouped];
     table.delegate = self;
     table.dataSource = self;
     table.tableFooterView = [[UIView alloc] init];
     table.showsVerticalScrollIndicator = NO;
     table.rowHeight = 100;
+    table.backgroundColor = ClearColor;
     [self.view addSubview:table];
     self.table = table;
 }
@@ -91,6 +107,7 @@
 }
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
+    self.withoutAnythingView.hidden = (self.products.count != 0);
     return self.products.count;
 }
 

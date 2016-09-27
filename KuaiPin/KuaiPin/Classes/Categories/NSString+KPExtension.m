@@ -99,14 +99,14 @@
 /**
  *  时间戳转字符串
  */
-+ (NSString *)dateStrFromTimestamp:(NSString *)timeStamp withFormatter:(NSString *)formatter
+- (NSString *)dateStrWithFormatter:(NSString *)formatter
 {
     NSDateFormatter *fmr = [[NSDateFormatter alloc] init];
     if (formatter == nil) {
         formatter = @"yyyy-MM-dd HH:mm:ss";
     }
     fmr.dateFormat = formatter;
-    NSDate *time = [NSDate dateWithTimeIntervalSince1970:timeStamp.integerValue/1000];
+    NSDate *time = [NSDate dateWithTimeIntervalSince1970:self.integerValue/1000];
     NSString *timeStr = [fmr stringFromDate:time];
     return timeStr;
 }

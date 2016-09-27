@@ -27,7 +27,7 @@ NSString * const UMAppKey = @"578467b367e58e0d96001678";
     [MobClick setAppVersion:version];
     UMConfigInstance.appKey = UMAppKey;
     UMConfigInstance.channelId = @"App Store";
-//    [MobClick setLogEnabled:YES];
+//    [MobClick setLogEnabled:YES];  // 提交应用时需注释掉
     [MobClick startWithConfigure:UMConfigInstance];
 
 }
